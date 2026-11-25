@@ -258,9 +258,9 @@ export default function EscenaZootopia() {
         subtitulo="Ella siempre tiene un plan. Él siempre tiene una sonrisa pícara. Juntos, el mejor equipo de la ciudad."
       />
 
-      <div className="mx-auto grid max-w-5xl gap-10 lg:grid-cols-[1.3fr_1fr]">
+      <div className="mx-auto grid max-w-5xl grid-cols-1 gap-10 lg:grid-cols-[1.3fr_1fr] [&>*]:min-w-0">
         {/* zorro y coneja */}
-        <Revelar className="relative rounded-[2rem] bg-white/70 p-6 shadow-xl ring-1 ring-white">
+        <Revelar className="relative rounded-[2rem] bg-white/70 p-4 shadow-xl ring-1 ring-white sm:p-6">
           <div className="mb-2 flex min-h-[8.5rem] items-end">
           <AnimatePresence>
             {grabacion && (
@@ -280,10 +280,10 @@ export default function EscenaZootopia() {
           </AnimatePresence>
           </div>
           <div className="flex items-end justify-center gap-2">
-            <motion.div className="h-60 w-48 sm:h-72 sm:w-56" animate={{ x: grabacion ? 14 : 0 }}>
+            <motion.div className="h-52 w-[50%] max-w-56 sm:h-72 sm:w-56" animate={{ x: grabacion ? 10 : 0 }}>
               <ImagenPersonaje opciones={grabacion ? personajes.zorroGuino : personajes.zorro} alt="El zorro" respaldo={<Zorro guino={grabacion} />} />
             </motion.div>
-            <motion.div className="h-60 w-40 sm:h-72 sm:w-48" animate={{ x: grabacion ? -14 : 0, y: grabacion ? [0, -12, 0] : 0 }} transition={{ y: { repeat: grabacion ? 2 : 0, duration: 0.4 } }}>
+            <motion.div className="h-52 w-[42%] max-w-48 sm:h-72 sm:w-48" animate={{ x: grabacion ? -10 : 0, y: grabacion ? [0, -12, 0] : 0 }} transition={{ y: { repeat: grabacion ? 2 : 0, duration: 0.4 } }}>
               <ImagenPersonaje opciones={grabacion ? personajes.conejaFeliz : personajes.coneja} alt="La conejita" respaldo={<Coneja feliz={grabacion} />} />
             </motion.div>
           </div>
@@ -293,7 +293,7 @@ export default function EscenaZootopia() {
           <div className="mt-4 text-center">
             <button
               onClick={() => setGrabacion((g) => !g)}
-              className="inline-flex items-center gap-2 rounded-full bg-[#f28c38] px-6 py-3 font-bold text-white shadow-lg transition hover:scale-105 active:scale-95"
+              className="inline-flex items-center gap-2 rounded-full bg-[#f28c38] px-5 py-3 text-sm font-bold text-white sm:px-6 sm:text-base shadow-lg transition hover:scale-105 active:scale-95"
             >
               <span className="text-xl">🥕</span>
               {grabacion ? "Detener grabación" : "Reproducir la zanahoria grabadora"}
@@ -319,9 +319,9 @@ export default function EscenaZootopia() {
         </Revelar>
 
         {/* perezoso */}
-        <Revelar retraso={0.15} className="flex flex-col items-center rounded-[2rem] bg-[#f6efe2] p-6 text-center shadow-xl ring-1 ring-white">
+        <Revelar retraso={0.15} className="flex flex-col items-center rounded-[2rem] bg-[#f6efe2] p-4 text-center sm:p-6 shadow-xl ring-1 ring-white">
           <p className="text-xs font-bold tracking-[0.25em] text-[#8a6f53] uppercase">Oficina de trámites</p>
-          <h3 className="titulo-mano mt-1 text-4xl text-vino">El perezoso más veloz</h3>
+          <h3 className="titulo-mano mt-1 text-3xl text-vino sm:text-4xl">El perezoso más veloz</h3>
           <motion.div
             className="my-4 h-56 w-44"
             animate={escribiendo ? { rotate: [-4, 4, -4], y: [0, -4, 0] } : terminado ? { scale: [1, 1.06, 1] } : { rotate: 0 }}
@@ -329,7 +329,7 @@ export default function EscenaZootopia() {
           >
             <ImagenPersonaje opciones={terminado ? personajes.perezosoSonrisa : personajes.perezoso} alt="El perezoso" respaldo={<Perezoso sonrisa={terminado ? 1 : progreso * 0.7} ojos={escribiendo ? 0.35 + 0.25 * Math.sin(texto.length) : 0.15} />} />
           </motion.div>
-          <div className="min-h-[3.5rem] w-full rounded-xl bg-white px-4 py-3 font-mono text-2xl tracking-wide text-tinta shadow-inner">
+          <div className="min-h-[3.5rem] w-full rounded-xl bg-white px-4 py-3 font-mono text-xl sm:text-2xl tracking-wide text-tinta shadow-inner">
             {texto}
             {escribiendo && <span className="animate-pulse">|</span>}
           </div>

@@ -20,7 +20,7 @@ export default function Polaroid({
 }) {
   return (
     <motion.figure
-      className={`relative bg-white p-2.5 pb-10 shadow-[0_15px_35px_-10px_rgba(90,40,30,0.35)] hover:z-10 ${className}`}
+      className={`relative bg-white p-2 pb-2 sm:p-2.5 sm:pb-3 shadow-[0_15px_35px_-10px_rgba(90,40,30,0.35)] hover:z-10 ${className}`}
       initial={{ opacity: 0, y: 30, rotate: giro * 2.2, scale: 0.94 }}
       whileInView={{ opacity: 1, y: 0, rotate: giro, scale: 1 }}
       whileHover={{ rotate: 0, scale: 1.05 }}
@@ -30,7 +30,9 @@ export default function Polaroid({
       <div className="relative aspect-[4/5] w-full overflow-hidden bg-durazno">
         <Image src={foto.src} alt={foto.pie ?? "Foto de nosotros"} fill sizes={sizes} className="object-cover" />
       </div>
-      {foto.pie && <figcaption className="titulo-mano absolute inset-x-0 bottom-2 text-center text-xl text-tinta/80">{foto.pie}</figcaption>}
+      <figcaption className="titulo-mano flex min-h-8 items-center justify-center px-1 pt-1.5 text-center text-base leading-tight text-tinta/80 sm:min-h-9 sm:text-xl">
+        {foto.pie}
+      </figcaption>
     </motion.figure>
   );
 }

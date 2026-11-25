@@ -272,16 +272,16 @@ function Controles({
 }) {
   return (
     <>
-      <div className="mt-8 flex items-center gap-4">
+      <div className="mt-8 flex w-full max-w-md items-center justify-between gap-2 sm:w-auto sm:max-w-none sm:justify-center sm:gap-4">
         <button
           onClick={() => alIr(posicion - 1)}
           disabled={posicion === 0}
-          className="grid h-12 w-12 place-items-center rounded-full bg-white text-2xl text-vino shadow-md transition enabled:hover:scale-110 disabled:opacity-30"
+          className="grid h-12 w-12 shrink-0 place-items-center rounded-full bg-white text-2xl text-vino shadow-md transition enabled:hover:scale-110 disabled:opacity-30"
           aria-label="Página anterior"
         >
           ‹
         </button>
-        <div className="min-w-[200px] text-center">
+        <div className="min-w-0 flex-1 text-center sm:min-w-[200px] sm:flex-none">
           <p className="texto-libro text-lg text-vino">{titulo}</p>
           <p className="text-xs text-tinta/80">
             {posicion + 1} de {total} · {texto}
@@ -290,7 +290,7 @@ function Controles({
         <button
           onClick={() => alIr(posicion + 1)}
           disabled={posicion === total - 1}
-          className="grid h-12 w-12 place-items-center rounded-full bg-white text-2xl text-vino shadow-md transition enabled:hover:scale-110 disabled:opacity-30"
+          className="grid h-12 w-12 shrink-0 place-items-center rounded-full bg-white text-2xl text-vino shadow-md transition enabled:hover:scale-110 disabled:opacity-30"
           aria-label="Página siguiente"
         >
           ›

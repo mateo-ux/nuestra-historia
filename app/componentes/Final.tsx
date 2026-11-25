@@ -16,13 +16,16 @@ export default function Final() {
   const [intentos, setIntentos] = useState(0);
 
   const huir = () => setIntentos((n) => n + 1);
-  const posNo = [
+  // En celular el botón "No" huye menos para no salirse de la pantalla.
+  const escala = typeof window !== "undefined" && window.innerWidth < 640 ? 0.5 : 1;
+  const base = [
     { x: 0, y: 0 },
     { x: 110, y: -50 },
     { x: -120, y: 40 },
     { x: 90, y: 60 },
     { x: -80, y: -60 },
   ][intentos % 5];
+  const posNo = { x: base.x * escala, y: base.y * escala };
 
   return (
     <section className="relative overflow-hidden bg-gradient-to-b from-[#d4603e] via-[#b8474f] to-[#6e2433] px-4 pt-24 pb-32 text-white">
@@ -43,26 +46,26 @@ export default function Final() {
           ))}
         </Revelar>
 
-        <Revelar retraso={0.2} className="mx-auto mt-16 max-w-xl rounded-[2rem] bg-white/15 p-8 ring-1 ring-white/30 backdrop-blur-md">
+        <Revelar retraso={0.2} className="mx-auto mt-16 max-w-xl rounded-[2rem] bg-white/15 p-5 ring-1 sm:p-8 ring-white/30 backdrop-blur-md">
           <p className="titulo-mano text-4xl">{pareja.ella},</p>
           <p className="texto-libro mt-2 text-2xl">¿escribimos juntos el capítulo 2?</p>
           <p className="mt-1 text-sm text-white/85">Nuestro segundo año, desde el {capituloDos.inicio}</p>
 
-          <div className="relative mt-8 flex min-h-[90px] items-center justify-center gap-6">
+          <div className="relative mt-8 flex min-h-[90px] items-center justify-center gap-3 sm:gap-6">
             <motion.button
               onClick={() => setDijoSi(true)}
-              animate={{ scale: 1 + Math.min(intentos, 5) * 0.12 }}
-              className="rounded-full bg-white px-8 py-3 text-lg font-bold text-vino shadow-xl transition hover:brightness-95"
+              animate={{ scale: 1 + Math.min(intentos, 5) * 0.12 * escala }}
+              className="rounded-full bg-white px-6 py-3 text-base font-bold whitespace-nowrap sm:px-8 sm:text-lg text-vino shadow-xl transition hover:brightness-95"
             >
               ¡Sí! 💛
             </motion.button>
             {!dijoSi && (
               <motion.button
-                onMouseEnter={huir}
+                onPointerEnter={(e) => e.pointerType === "mouse" && huir()}
                 onClick={huir}
                 animate={posNo}
                 transition={{ type: "spring", stiffness: 300, damping: 15 }}
-                className="rounded-full border-2 border-white px-6 py-3 font-semibold text-white"
+                className="w-[7.5rem] rounded-full border-2 border-white px-3 py-2.5 text-xs leading-tight font-semibold text-white sm:w-auto sm:px-6 sm:py-3 sm:text-base"
               >
                 {frasesNo[Math.min(intentos, frasesNo.length - 1)]}
               </motion.button>

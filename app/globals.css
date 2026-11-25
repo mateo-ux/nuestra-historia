@@ -27,13 +27,16 @@
 
 html {
   scroll-behavior: smooth;
+  overflow-x: clip;
+  -webkit-text-size-adjust: 100%;
 }
 
 body {
   background: var(--crema);
   color: var(--tinta);
   font-family: var(--font-texto), system-ui, sans-serif;
-  overflow-x: hidden;
+  overflow-x: clip;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .texto-libro {

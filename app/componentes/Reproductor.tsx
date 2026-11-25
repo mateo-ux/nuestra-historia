@@ -55,6 +55,20 @@ export default function Reproductor() {
   const [aviso, setAviso] = useState("");
   const [copiado, setCopiado] = useState<string | null>(null);
   const contenedor = useRef<HTMLDivElement>(null);
+  const panel = useRef<HTMLDivElement>(null);
+  const boton = useRef<HTMLButtonElement>(null);
+
+  // Tocar fuera del panel lo cierra (útil en celular).
+  useEffect(() => {
+    if (!abierto) return;
+    const fuera = (e: PointerEvent) => {
+      const t = e.target as Node;
+      if (panel.current?.contains(t) || boton.current?.contains(t)) return;
+      setAbierto(false);
+    };
+    document.addEventListener("pointerdown", fuera);
+    return () => document.removeEventListener("pointerdown", fuera);
+  }, [abierto]);
   const controlador = useRef<Controlador | null>(null);
   const pendiente = useRef<string | null>(null);
 
@@ -169,20 +183,28 @@ export default function Reproductor() {
     <>
       {/* botón flotante */}
       <button
+        ref={boton}
         onClick={() => setAbierto((a) => !a)}
-        className="fixed right-4 bottom-4 z-40 flex items-center gap-2 rounded-full bg-white px-4 py-2.5 text-sm font-bold text-vino shadow-xl ring-1 ring-vino/10 transition hover:scale-105"
+        className="fixed right-3 bottom-3 z-40 flex h-12 min-w-12 items-center justify-center gap-2 rounded-full bg-white px-3 text-sm font-bold text-vino shadow-xl ring-1 ring-vino/10 transition hover:scale-105 sm:right-4 sm:bottom-4 sm:px-4"
+        style={{ marginBottom: "env(safe-area-inset-bottom)" }}
         aria-expanded={abierto}
+        aria-label={abierto ? "Cerrar canciones" : "Nuestras canciones"}
       >
-        <span className={sonando || bienvenida.sonando ? "animate-spin [animation-duration:3s]" : ""}>💿</span>
-        {abierto ? "Cerrar" : "Nuestras canciones"}
+        {abierto ? (
+          <span className="text-lg leading-none sm:text-base">✕</span>
+        ) : (
+          <span className={`text-xl sm:text-base ${sonando || bienvenida.sonando ? "animate-spin [animation-duration:3s]" : ""}`}>💿</span>
+        )}
+        <span className="hidden sm:inline">{abierto ? "Cerrar" : "Nuestras canciones"}</span>
       </button>
 
       {/* panel (siempre montado para que la música siga sonando) */}
       <motion.div
+        ref={panel}
         initial={false}
         animate={abierto ? { opacity: 1, y: 0, pointerEvents: "auto" } : { opacity: 0, y: 30, pointerEvents: "none" }}
         transition={{ type: "spring", stiffness: 260, damping: 26 }}
-        className="fixed right-4 bottom-20 z-40 flex max-h-[75vh] w-[calc(100vw-2rem)] max-w-sm flex-col overflow-hidden rounded-3xl bg-[#2a1a22] text-white shadow-2xl ring-1 ring-white/10"
+        className="fixed right-3 bottom-18 z-40 flex max-h-[calc(100svh-7rem)] w-[calc(100vw-1.5rem)] max-w-sm sm:right-4 sm:bottom-20 flex-col overflow-hidden rounded-3xl bg-[#2a1a22] text-white shadow-2xl ring-1 ring-white/10"
         aria-hidden={!abierto}
       >
         <div className="px-5 pt-5 pb-3">
