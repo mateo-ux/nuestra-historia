@@ -39,3 +39,8 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# originales pesados (la web usa public/optimizado)
+/public/Revista/
+/public/fotos/
+/_para_borrar/

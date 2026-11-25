@@ -1,26 +1,82 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --atardecer: #f08a5d;
+  --naranja: #e8673c;
+  --durazno: #fbd3b8;
+  --rosa: #f7b9b0;
+  --crema: #fff6ee;
+  --vino: #8e3b46;
+  --tinta: #4a2c2a;
+  --terracota: #a8452a;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-atardecer: var(--atardecer);
+  --color-naranja: var(--naranja);
+  --color-durazno: var(--durazno);
+  --color-rosa: var(--rosa);
+  --color-crema: var(--crema);
+  --color-vino: var(--vino);
+  --color-tinta: var(--tinta);
+  --color-terracota: var(--terracota);
+  --font-manuscrita: var(--font-manuscrita);
+  --font-serif: var(--font-serif);
+  --font-sans: var(--font-texto);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html {
+  scroll-behavior: smooth;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--crema);
+  color: var(--tinta);
+  font-family: var(--font-texto), system-ui, sans-serif;
+  overflow-x: hidden;
+}
+
+.texto-libro {
+  font-family: var(--font-serif), Georgia, serif;
+  font-style: italic;
+}
+
+.titulo-mano {
+  font-family: var(--font-manuscrita), cursive;
+}
+
+.fondo-papel {
+  background:
+    radial-gradient(circle at 15% 20%, rgba(247, 185, 176, 0.35), transparent 40%),
+    radial-gradient(circle at 85% 70%, rgba(251, 211, 184, 0.5), transparent 45%),
+    var(--crema);
+}
+
+.cara-oculta {
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+
+@keyframes flotar {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+
+@keyframes subir-corazon {
+  0% { transform: translateY(0) scale(0.6) rotate(0deg); opacity: 0; }
+  10% { opacity: 0.9; }
+  100% { transform: translateY(-110vh) scale(1.1) rotate(25deg); opacity: 0; }
+}
+
+@keyframes titilar {
+  0%, 100% { opacity: 0.25; }
+  50% { opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }

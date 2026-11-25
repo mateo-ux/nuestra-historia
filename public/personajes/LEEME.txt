@@ -1,0 +1,4 @@
+Pon aqui tus PNG con fondo transparente:
+zorro.png, zorro-guino.png (opcional)
+coneja.png, coneja-feliz.png (opcional)
+perezoso.png, perezoso-sonrisa.png (opcional)
