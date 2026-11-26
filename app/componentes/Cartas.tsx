@@ -45,11 +45,22 @@ export default function Cartas() {
 
       <Modal abierto={carta !== null} alCerrar={() => setAbierta(null)}>
         {carta && (
-          <div className="rounded-2xl bg-[#fffaf3] p-8 shadow-2xl ring-1 ring-[#f2dccb] sm:p-10" style={{ backgroundImage: "repeating-linear-gradient(transparent, transparent 31px, #f3e2d6 32px)" }}>
-            <p className="text-xs font-bold tracking-[0.25em] text-terracota uppercase">Ábrela cuando {carta.cuando}</p>
-            <h3 className="titulo-mano mt-2 text-4xl text-vino">Para {pareja.ella},</h3>
-            <p className="texto-libro mt-4 text-xl leading-8 text-tinta">{carta.texto}</p>
-            <p className="titulo-mano mt-6 text-right text-3xl text-vino">Con amor, {pareja.el}</p>
+          // Hoja rayada: cada renglón mide 2rem y todo el texto usa alturas de
+          // línea y márgenes múltiplos de 2rem. Como cada fuente pone la base
+          // de las letras a distinta altura dentro de su renglón, cada texto
+          // se baja un poco (top en em, medido en el navegador) para que las
+          // letras queden apoyadas justo sobre la línea.
+          <div
+            className="rounded-2xl bg-[#fffaf3] px-6 py-8 shadow-2xl ring-1 ring-[#f2dccb] sm:px-10"
+            style={{
+              backgroundImage: "linear-gradient(to bottom, transparent calc(2rem - 1px), #efd9ca calc(2rem - 1px))",
+              backgroundSize: "100% 2rem",
+            }}
+          >
+            <p className="relative top-[0.667em] text-xs leading-8 font-bold tracking-[0.25em] text-terracota uppercase">Ábrela cuando {carta.cuando}</p>
+            <h3 className="titulo-mano relative top-[0.5em] text-4xl leading-[4rem] text-vino">Para {pareja.ella},</h3>
+            <p className="texto-libro relative top-[0.3em] text-xl leading-8 text-tinta">{carta.texto}</p>
+            <p className="titulo-mano relative top-[0.633em] mt-8 text-right text-3xl leading-[4rem] text-vino">Con amor, {pareja.el}</p>
           </div>
         )}
       </Modal>

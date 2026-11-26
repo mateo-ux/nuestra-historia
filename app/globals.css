@@ -83,3 +83,42 @@ body {
     transition-duration: 0.01ms !important;
   }
 }
+
+/* Barras de desplazamiento con los colores de la página (durazno y coral). */
+/* Firefox usa las propiedades estándar; Chrome, Edge y Safari usan ::-webkit-scrollbar
+   (si ven scrollbar-color ignoran el degradado, por eso va dentro de @supports). */
+@supports not selector(::-webkit-scrollbar) {
+  html {
+    scrollbar-color: var(--atardecer) var(--crema);
+  }
+  .barra-bonita {
+    scrollbar-width: thin;
+    scrollbar-color: #ffd6a8 transparent;
+  }
+}
+html::-webkit-scrollbar {
+  width: 10px;
+}
+html::-webkit-scrollbar-track {
+  background: var(--crema);
+}
+html::-webkit-scrollbar-thumb {
+  border: 2px solid var(--crema);
+  border-radius: 999px;
+  background: linear-gradient(to bottom, var(--atardecer), var(--vino));
+}
+
+/* Lista de canciones: barra fina y redondeada, sin flechas. */
+.barra-bonita::-webkit-scrollbar {
+  width: 6px;
+}
+.barra-bonita::-webkit-scrollbar-track {
+  background: transparent;
+}
+.barra-bonita::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background: linear-gradient(to bottom, #ffd6a8, var(--atardecer));
+}
+.barra-bonita::-webkit-scrollbar-button {
+  display: none;
+}

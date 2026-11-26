@@ -2,8 +2,9 @@
 
 import { AnimatePresence, motion } from "framer-motion";
 import Image from "next/image";
-import { useCallback, useEffect, useState, useSyncExternalStore } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { libro } from "@/datos/contenido";
+import { useMediaQuery } from "@/lib/useMediaQuery";
 import TituloSeccion from "./TituloSeccion";
 
 type Pagina = (typeof libro)[number];
@@ -50,18 +51,7 @@ function tituloVista(v: Vista) {
 }
 
 // Celular: una hoja a la vez. Computador: libro abierto.
-const consulta = "(min-width: 768px)";
-function useEsAncho() {
-  return useSyncExternalStore(
-    (avisar) => {
-      const m = window.matchMedia(consulta);
-      m.addEventListener("change", avisar);
-      return () => m.removeEventListener("change", avisar);
-    },
-    () => window.matchMedia(consulta).matches,
-    () => true,
-  );
-}
+const useEsAncho = () => useMediaQuery("(min-width: 768px)", true);
 
 function Hoja({ pagina, prioridad }: { pagina: Pagina | null; prioridad?: boolean }) {
   if (!pagina) return null;

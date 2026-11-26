@@ -21,7 +21,7 @@ export default function Galeria() {
         {viaje.fotos.map((f, i) => (
           <motion.div
             key={f.src}
-            className="mb-4 break-inside-avoid"
+            className="mb-4 break-inside-avoid [backface-visibility:hidden]"
             initial={{ opacity: 0, y: 30, scale: 0.95, rotate: i % 2 ? 1.5 : -1.5 }}
             whileInView={{ opacity: 1, y: 0, scale: 1, rotate: 0 }}
             viewport={{ once: true, margin: "-60px" }}
@@ -40,7 +40,7 @@ export default function Galeria() {
                 className={`w-full object-cover transition duration-700 group-hover:scale-110 ${i % 3 === 1 ? "aspect-square" : "aspect-[3/4]"}`}
               />
               {f.pie && (
-                <span className="titulo-mano absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/60 to-transparent px-3 pt-8 pb-2 text-left text-xl text-white opacity-0 transition group-hover:opacity-100">
+                <span className="titulo-mano absolute bottom-2 left-2 max-w-[calc(100%-1rem)] rounded-full bg-black/45 px-2.5 py-0.5 text-left text-base leading-snug text-white sm:inset-x-0 sm:bottom-0 sm:left-0 sm:max-w-none sm:rounded-none sm:bg-transparent sm:bg-gradient-to-t sm:from-black/60 sm:to-transparent sm:px-3 sm:pt-8 sm:pb-2 sm:text-xl sm:opacity-0 sm:transition sm:group-hover:opacity-100">
                   {f.pie}
                 </span>
               )}

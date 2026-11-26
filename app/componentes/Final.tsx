@@ -4,6 +4,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import Image from "next/image";
 import { useState } from "react";
 import { capituloDos, despues, pareja } from "@/datos/contenido";
+import { useMediaQuery } from "@/lib/useMediaQuery";
 import Corazon from "./Corazon";
 import CorazonesFlotantes from "./CorazonesFlotantes";
 import Polaroid from "./Polaroid";
@@ -17,7 +18,7 @@ export default function Final() {
 
   const huir = () => setIntentos((n) => n + 1);
   // En celular el botón "No" huye menos para no salirse de la pantalla.
-  const escala = typeof window !== "undefined" && window.innerWidth < 640 ? 0.5 : 1;
+  const escala = useMediaQuery("(max-width: 639px)") ? 0.5 : 1;
   const base = [
     { x: 0, y: 0 },
     { x: 110, y: -50 },
@@ -46,7 +47,7 @@ export default function Final() {
           ))}
         </Revelar>
 
-        <Revelar retraso={0.2} className="mx-auto mt-16 max-w-xl rounded-[2rem] bg-white/15 p-5 ring-1 sm:p-8 ring-white/30 backdrop-blur-md">
+        <Revelar retraso={0.2} className="mx-auto mt-16 max-w-xl rounded-[2rem] bg-white/15 p-5 ring-1 sm:p-8 ring-white/30 sm:backdrop-blur-md">
           <p className="titulo-mano text-4xl">{pareja.ella},</p>
           <p className="texto-libro mt-2 text-2xl">¿escribimos juntos el capítulo 2?</p>
           <p className="mt-1 text-sm text-white/85">Nuestro segundo año, desde el {capituloDos.inicio}</p>

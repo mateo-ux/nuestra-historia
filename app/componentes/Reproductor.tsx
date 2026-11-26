@@ -3,15 +3,22 @@
 import { AnimatePresence, motion } from "framer-motion";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { canciones as cancionesFijas, musica, pareja, type Cancion } from "@/datos/contenido";
+import { buscarLetraEnLinea, useCancionesCompartidas } from "@/lib/useCancionesCompartidas";
+import LetraCancion from "./LetraCancion";
 
 // Reproductor flotante con la lista de canciones de Spotify.
 // Usa el reproductor oficial de Spotify (iFrame API): no se descarga nada.
 
 type Controlador = {
   loadUri: (uri: string) => void;
+  togglePlay: () => void;
   play: () => void;
   pause: () => void;
-  addListener: (evento: string, fn: (e: { data: { isPaused: boolean } }) => void) => void;
+  seek?: (segundos: number) => void;
+  addListener: (
+    evento: string,
+    fn: (e: { data: { isPaused: boolean; position?: number; duration?: number; playingURI?: string } }) => void,
+  ) => void;
 };
 type ApiSpotify = {
   createController: (el: HTMLElement, opciones: Record<string, unknown>, listo: (c: Controlador) => void) => void;
@@ -21,8 +28,6 @@ declare global {
     onSpotifyIframeApiReady?: (api: ApiSpotify) => void;
   }
 }
-
-const CLAVE = "canciones-agregadas";
 
 // Acepta enlaces https://open.spotify.com/(intl-xx/)track/ID?si=... o spotify:track:ID
 export function aUri(url: string): string | null {
@@ -34,18 +39,9 @@ export function aUri(url: string): string | null {
   return null;
 }
 
-function leerLocales(): Cancion[] {
-  try {
-    const v = JSON.parse(localStorage.getItem(CLAVE) ?? "[]");
-    return Array.isArray(v) ? v : [];
-  } catch {
-    return [];
-  }
-}
-
 export default function Reproductor() {
   const [abierto, setAbierto] = useState(false);
-  const [locales, setLocales] = useState<Cancion[]>([]);
+  const { canciones: agregadas, agregar: guardarCancion, quitar, guardarLetra, compartido, error } = useCancionesCompartidas();
   const [titulos, setTitulos] = useState<Record<string, string>>({});
   const [actual, setActual] = useState<string | null>(null);
   const [sonando, setSonando] = useState(false);
@@ -53,6 +49,11 @@ export default function Reproductor() {
   const [modo, setModo] = useState<"api" | "simple" | "cargando">("cargando");
   const [form, setForm] = useState({ url: "", titulo: "", de: `${pareja.el} para ${pareja.ella}` });
   const [aviso, setAviso] = useState("");
+  // El formulario se puede esconder para que la lista ocupe toda la tarjeta.
+  const [formAbierto, setFormAbierto] = useState(false);
+  const [letraAbierta, setLetraAbierta] = useState(false);
+  // Segundo de la canción que está sonando (lo informa Spotify), para la letra sincronizada.
+  const [posicion, setPosicion] = useState(0);
   const [copiado, setCopiado] = useState<string | null>(null);
   const contenedor = useRef<HTMLDivElement>(null);
   const panel = useRef<HTMLDivElement>(null);
@@ -71,16 +72,28 @@ export default function Reproductor() {
   }, [abierto]);
   const controlador = useRef<Controlador | null>(null);
   const pendiente = useRef<string | null>(null);
+  // Canción cargada ahora mismo en el reproductor de Spotify.
+  const cargada = useRef<string | null>(null);
+  // Se cargó una canción nueva y hay que darle play cuando esté lista.
+  const reproducirAlCargar = useRef(false);
 
-  const lista = [...cancionesFijas.map((c) => ({ ...c, local: false })), ...locales.map((c) => ({ ...c, local: true }))].filter(
-    (c) => aUri(c.url),
-  );
+  const lista = [
+    ...cancionesFijas.map((c) => ({ ...c, id: undefined as string | undefined })),
+    ...agregadas,
+  ].filter((c) => aUri(c.url));
+  const uris = lista.map((c) => aUri(c.url)!);
 
-  // Cargar canciones agregadas desde la página (solo en este navegador).
+  // Los avisos de Spotify se registran una sola vez, así que leen la lista y la
+  // canción actual desde refs para no quedarse con valores viejos.
+  const urisRef = useRef(uris);
+  const actualRef = useRef(actual);
   useEffect(() => {
-    const t = setTimeout(() => setLocales(leerLocales()), 0);
-    return () => clearTimeout(t);
-  }, []);
+    urisRef.current = uris;
+    actualRef.current = actual;
+  });
+  const saltarRef = useRef<(paso: 1 | -1) => void>(() => {});
+  const ultimaPos = useRef({ pos: 0, dur: 0 });
+  const ignorarFinHasta = useRef(0);
 
   // Títulos automáticos desde Spotify cuando no se escribió uno.
   useEffect(() => {
@@ -102,28 +115,12 @@ export default function Reproductor() {
     return () => window.removeEventListener("estado-bienvenida", fn);
   }, []);
 
-  // Cargar el reproductor oficial de Spotify.
+  // 1) Cargar el script oficial de Spotify (una sola vez).
+  const [api, setApi] = useState<ApiSpotify | null>(null);
   useEffect(() => {
-    const respaldo = setTimeout(() => setModo((m) => (m === "cargando" ? "simple" : m)), 8000);
-    window.onSpotifyIframeApiReady = (api) => {
-      if (!contenedor.current) return;
-      const primera = lista[0] ? aUri(lista[0].url) : null;
-      api.createController(contenedor.current, { uri: primera ?? "spotify:track:0", width: "100%", height: 152 }, (c) => {
-        controlador.current = c;
-        setModo("api");
-        if (primera && !actual) setActual(primera);
-        c.addListener("playback_update", (e) => {
-          const pausa = e.data.isPaused;
-          setSonando(!pausa);
-          if (!pausa) window.dispatchEvent(new Event("pausar-musica"));
-        });
-        if (pendiente.current) {
-          c.loadUri(pendiente.current);
-          c.play();
-          pendiente.current = null;
-        }
-      });
-    };
+    // Si el script no responde en 10 s (bloqueado, sin internet), se usa el embed simple.
+    const respaldo = setTimeout(() => setModo((m) => (m === "cargando" ? "simple" : m)), 10000);
+    window.onSpotifyIframeApiReady = (a) => setApi(a);
     if (!document.getElementById("spotify-iframe-api")) {
       const s = document.createElement("script");
       s.id = "spotify-iframe-api";
@@ -133,8 +130,69 @@ export default function Reproductor() {
       document.body.appendChild(s);
     }
     return () => clearTimeout(respaldo);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Da play cuando Spotify termine de cargar; con respaldo por si "ready" no llega.
+  const reproducirCuandoEsteLista = useCallback((c: Controlador, uri: string) => {
+    reproducirAlCargar.current = true;
+    setTimeout(() => {
+      if (reproducirAlCargar.current && cargada.current === uri) {
+        reproducirAlCargar.current = false;
+        c.play();
+      }
+    }, 1500);
+  }, []);
+
+  // 2) Crear el reproductor solo cuando ya hay una canción de verdad.
+  // (Crearlo con una canción vacía hace que Spotify nunca responda.)
+  const primeraUri = lista[0] ? aUri(lista[0].url) : null;
+  const creando = useRef(false);
+  useEffect(() => {
+    const destino = pendiente.current ?? primeraUri;
+    if (!api || !destino || !contenedor.current || creando.current || controlador.current) return;
+    creando.current = true;
+    api.createController(contenedor.current, { uri: destino, width: "100%", height: 152 }, (c) => {
+      controlador.current = c;
+      cargada.current = destino;
+      setActual((a) => a ?? destino);
+      setModo("api");
+      // Spotify avisa "ready" cuando termina de cargar una canción; recién
+      // ahí play() funciona. Llamarlo antes no hace nada.
+      c.addListener("ready", () => {
+        if (reproducirAlCargar.current) {
+          reproducirAlCargar.current = false;
+          c.play();
+        }
+      });
+      c.addListener("playback_update", (e) => {
+        const { isPaused: pausa, position = 0, duration = 0 } = e.data;
+        setSonando(!pausa);
+        setPosicion(position);
+        if (!pausa) window.dispatchEvent(new Event("pausar-musica"));
+        // ¿Terminó la canción? Spotify avisa con position === duration (sin pausar),
+        // o la deja en pausa cerca del final, o la devuelve a 0.
+        const antes = ultimaPos.current;
+        ultimaPos.current = { pos: position, dur: duration };
+        const llegoAlFinal = duration > 0 && position >= duration - 300;
+        const pausadaAlFinal = pausa && duration > 0 && position >= duration - 1200;
+        const volvioACero = pausa && position === 0 && antes.dur > 0 && antes.pos >= antes.dur - 2500;
+        if ((llegoAlFinal || pausadaAlFinal || volvioACero) && Date.now() > ignorarFinHasta.current) {
+          setSonando(false);
+          ignorarFinHasta.current = Date.now() + 4000;
+          saltarRef.current(1);
+        }
+      });
+      // Si tocaron una canción mientras se creaba, la pone a sonar.
+      const p = pendiente.current;
+      pendiente.current = null;
+      if (!p) return;
+      if (p !== destino) {
+        cargada.current = p;
+        c.loadUri(p);
+      }
+      reproducirCuandoEsteLista(c, p);
+    });
+  }, [api, primeraUri, reproducirCuandoEsteLista]);
 
   // Los videos con sonido pausan Spotify.
   useEffect(() => {
@@ -145,33 +203,99 @@ export default function Reproductor() {
 
   const reproducir = useCallback((uri: string) => {
     setActual(uri);
+    ignorarFinHasta.current = Date.now() + 3000;
     window.dispatchEvent(new Event("pausar-musica"));
     const c = controlador.current;
-    if (c) {
-      c.loadUri(uri);
-      c.play();
-    } else pendiente.current = uri;
-  }, []);
+    if (!c) {
+      pendiente.current = uri;
+      return;
+    }
+    if (cargada.current === uri) {
+      // Misma canción: el botón funciona como play/pausa.
+      c.togglePlay();
+      return;
+    }
+    cargada.current = uri;
+    c.loadUri(uri);
+    reproducirCuandoEsteLista(c, uri);
+  }, [reproducirCuandoEsteLista]);
 
-  const guardarLocales = (nuevas: Cancion[]) => {
-    setLocales(nuevas);
-    try {
-      localStorage.setItem(CLAVE, JSON.stringify(nuevas));
-    } catch {}
-  };
+  // Anterior / siguiente. Al llegar al final de la lista vuelve a empezar.
+  const saltar = useCallback(
+    (paso: 1 | -1) => {
+      const lista = urisRef.current;
+      if (lista.length === 0) return;
+      const i = lista.indexOf(actualRef.current ?? "");
+      const destino = lista[(i + paso + lista.length) % lista.length];
+      if (destino === actualRef.current && lista.length === 1) {
+        controlador.current?.seek?.(0);
+        controlador.current?.play();
+        return;
+      }
+      reproducir(destino);
+    },
+    [reproducir],
+  );
+  useEffect(() => {
+    saltarRef.current = saltar;
+  }, [saltar]);
 
-  const agregar = (e: React.FormEvent) => {
+  const cancionActual = lista.find((c) => aUri(c.url) === actual) ?? lista[0];
+  const tituloActual = cancionActual ? cancionActual.titulo || titulos[cancionActual.url] || "Canción" : "";
+
+  const controles = (
+    <div className="flex items-center justify-center gap-3">
+      <button
+        onClick={() => saltar(-1)}
+        className="grid h-9 w-9 place-items-center rounded-full text-white/85 transition hover:bg-white/10"
+        aria-label="Canción anterior"
+      >
+        <svg viewBox="0 0 24 24" className="h-5 w-5 fill-current" aria-hidden><path d="M6 5h2v14H6zM20 5v14L9 12z" /></svg>
+      </button>
+      <button
+        onClick={() => actual && reproducir(actual)}
+        className="grid h-11 w-11 place-items-center rounded-full bg-white text-[#2a1a22] shadow transition hover:scale-105"
+        aria-label={sonando ? "Pausar" : "Reproducir"}
+      >
+        {sonando ? (
+          <svg viewBox="0 0 24 24" className="h-5 w-5 fill-current" aria-hidden><path d="M7 5h4v14H7zM13 5h4v14h-4z" /></svg>
+        ) : (
+          <svg viewBox="0 0 24 24" className="ml-0.5 h-5 w-5 fill-current" aria-hidden><path d="M7 4v16l13-8z" /></svg>
+        )}
+      </button>
+      <button
+        onClick={() => saltar(1)}
+        className="grid h-9 w-9 place-items-center rounded-full text-white/85 transition hover:bg-white/10"
+        aria-label="Canción siguiente"
+      >
+        <svg viewBox="0 0 24 24" className="h-5 w-5 fill-current" aria-hidden><path d="M16 5h2v14h-2zM4 5v14l11-7z" /></svg>
+      </button>
+    </div>
+  );
+
+  const agregar = async (e: React.FormEvent) => {
     e.preventDefault();
     const uri = aUri(form.url);
     if (!uri) {
       setAviso("Ese enlace no parece de Spotify. En Spotify: Compartir → Copiar enlace.");
       return;
     }
-    const nueva: Cancion = { url: form.url.trim(), titulo: form.titulo.trim() || undefined, de: form.de.trim() || undefined };
-    guardarLocales([...locales, nueva]);
+    // Se guarda siempre el enlace limpio (sin ?si=, intl-es, texto extra, etc.).
+    const [, tipo, id] = uri.split(":");
+    const nueva: Cancion = { url: `https://open.spotify.com/${tipo}/${id}`, titulo: form.titulo.trim() || undefined, de: form.de.trim() || undefined };
+    setAviso("Guardando…");
+    const guardada = await guardarCancion(nueva);
+    if (!guardada) {
+      setAviso("");
+      return;
+    }
     setForm((f) => ({ ...f, url: "", titulo: "" }));
-    setAviso("¡Agregada! 💛");
+    setFormAbierto(false);
+    setAviso(compartido ? "¡Agregada! Ya la puede ver tu amor 💛" : "¡Agregada! 💛");
     reproducir(uri);
+    // Busca la letra sola y la deja guardada (si no la encuentra, se puede pegar a mano).
+    const letra = await buscarLetraEnLinea(guardada.url);
+    if (letra) await guardarLetra(guardada.id, letra);
   };
 
   const lineaCodigo = (c: Cancion) =>
@@ -229,9 +353,25 @@ export default function Reproductor() {
               <div ref={contenedor} />
             </div>
           )}
+          {lista.length > 0 && modo !== "simple" && (
+            <div className="mt-2 flex items-center justify-between">
+              <span className="w-16" />
+              {controles}
+              <button
+                onClick={() => setLetraAbierta(true)}
+                className="flex w-16 items-center justify-end gap-1 rounded-full py-1 text-xs font-bold text-[#ffd6a8] transition hover:text-white"
+                aria-label="Ver letra"
+              >
+                <svg viewBox="0 0 24 24" className="h-4 w-4 fill-current" aria-hidden>
+                  <path d="M4 5h16v2H4zm0 4h10v2H4zm0 4h16v2H4zm0 4h10v2H4z" />
+                </svg>
+                Letra
+              </button>
+            </div>
+          )}
         </div>
 
-        <ol className="mt-3 flex-1 space-y-1 overflow-y-auto px-3 pb-2">
+        <ol className="barra-bonita mt-3 flex-1 space-y-1 overflow-y-auto px-3 pb-2">
           {musica.archivo && bienvenida.hay && (
             <li>
               <button
@@ -257,17 +397,18 @@ export default function Reproductor() {
                   <button
                     onClick={() => reproducir(uri)}
                     className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-[#1ed760] text-[#1a1a1a] transition hover:scale-110"
-                    aria-label="Reproducir"
+                    aria-label={activa && sonando ? "Pausar" : "Reproducir"}
                   >
-                    {activa && sonando ? "♫" : "▶"}
+                    {activa && sonando ? "❚❚" : "▶"}
                   </button>
                   <button onClick={() => reproducir(uri)} className="min-w-0 flex-1 text-left">
                     <span className="block truncate font-semibold">{c.titulo || titulos[c.url] || `Canción ${i + 1}`}</span>
                     {c.de && <span className="block truncate text-xs text-white/75">💌 {c.de}</span>}
                     {c.nota && <span className="block truncate text-xs text-white/60 italic">{c.nota}</span>}
                   </button>
-                  {c.local && (
+                  {c.id && (
                     <div className="flex shrink-0 gap-1">
+                      {!compartido && (
                       <button
                         title="Copiar línea para datos/contenido.ts"
                         onClick={() => {
@@ -279,9 +420,10 @@ export default function Reproductor() {
                       >
                         {copiado === c.url ? "✓" : "⧉"}
                       </button>
+                      )}
                       <button
                         title="Quitar"
-                        onClick={() => guardarLocales(locales.filter((l) => l.url !== c.url))}
+                        onClick={() => c.id && quitar(c.id)}
                         className="rounded-full px-2 py-1 text-xs text-white/70 hover:bg-white/10"
                       >
                         ✕
@@ -297,43 +439,106 @@ export default function Reproductor() {
           )}
         </ol>
 
-        <form onSubmit={agregar} className="space-y-2 border-t border-white/10 bg-black/20 p-4">
-          <p className="text-xs font-bold tracking-widest text-[#ffd6a8] uppercase">+ Agregar canción</p>
-          <input
-            value={form.url}
-            onChange={(e) => setForm({ ...form, url: e.target.value })}
-            placeholder="Pega el enlace de Spotify"
-            className="w-full rounded-lg bg-white/10 px-3 py-2 text-sm placeholder:text-white/50 focus:ring-2 focus:ring-[#ffd6a8] focus:outline-none"
-          />
-          <div className="flex gap-2">
-            <input
-              value={form.titulo}
-              onChange={(e) => setForm({ ...form, titulo: e.target.value })}
-              placeholder="Título (opcional)"
-              className="min-w-0 flex-1 rounded-lg bg-white/10 px-3 py-2 text-sm placeholder:text-white/50 focus:outline-none"
-            />
-            <select
-              value={form.de}
-              onChange={(e) => setForm({ ...form, de: e.target.value })}
-              className="rounded-lg bg-white/10 px-2 py-2 text-sm focus:outline-none [&>option]:text-black"
+        <AnimatePresence initial={false} mode="wait">
+          {formAbierto ? (
+            <motion.form
+              key="formulario"
+              onSubmit={agregar}
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: "auto", opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              transition={{ duration: 0.25, ease: "easeOut" }}
+              className="space-y-2 overflow-hidden border-t border-white/10 bg-black/20 px-4 pt-3 pb-4"
             >
-              <option value={`${pareja.el} para ${pareja.ella}`}>De {pareja.el}</option>
-              <option value={`${pareja.ella} para ${pareja.el}`}>De {pareja.ella}</option>
-              <option value="De los dos">De los dos</option>
-            </select>
-          </div>
-          <button className="w-full rounded-lg bg-[#ffd6a8] py-2 text-sm font-bold text-vino transition hover:brightness-95">Agregar</button>
-          <AnimatePresence>
-            {aviso && (
-              <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="text-xs text-white/80">
-                {aviso}
-              </motion.p>
-            )}
-          </AnimatePresence>
-          <p className="text-[11px] leading-snug text-white/55">
-            Si no has iniciado sesión en Spotify en este navegador, solo suenan 30 segundos de cada canción.
-          </p>
-        </form>
+              <div className="flex items-center justify-between">
+                <p className="text-xs font-bold tracking-widest text-[#ffd6a8] uppercase">Agregar canción</p>
+                <button
+                  type="button"
+                  onClick={() => setFormAbierto(false)}
+                  className="grid h-7 w-7 place-items-center rounded-full text-sm text-white/70 transition hover:bg-white/10 hover:text-white"
+                  aria-label="Cerrar formulario"
+                >
+                  ✕
+                </button>
+              </div>
+              <input
+                autoFocus
+                value={form.url}
+                onChange={(e) => setForm({ ...form, url: e.target.value })}
+                placeholder="Pega el enlace de Spotify"
+                className="w-full rounded-lg bg-white/10 px-3 py-2 text-sm placeholder:text-white/50 focus:ring-2 focus:ring-[#ffd6a8] focus:outline-none"
+              />
+              <div className="flex gap-2">
+                <input
+                  value={form.titulo}
+                  onChange={(e) => setForm({ ...form, titulo: e.target.value })}
+                  placeholder="Título (opcional)"
+                  className="min-w-0 flex-1 rounded-lg bg-white/10 px-3 py-2 text-sm placeholder:text-white/50 focus:outline-none"
+                />
+                <select
+                  value={form.de}
+                  onChange={(e) => setForm({ ...form, de: e.target.value })}
+                  className="rounded-lg bg-white/10 px-2 py-2 text-sm focus:outline-none [&>option]:text-black"
+                >
+                  <option value={`${pareja.el} para ${pareja.ella}`}>De {pareja.el}</option>
+                  <option value={`${pareja.ella} para ${pareja.el}`}>De {pareja.ella}</option>
+                  <option value="De los dos">De los dos</option>
+                </select>
+              </div>
+              <button className="w-full rounded-lg bg-[#ffd6a8] py-2 text-sm font-bold text-vino transition hover:brightness-95">Agregar</button>
+              <AnimatePresence>
+                {(error || aviso) && (
+                  <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="text-xs text-white/80">
+                    {error ?? aviso}
+                  </motion.p>
+                )}
+              </AnimatePresence>
+              <p className="text-[11px] leading-snug text-white/55">
+                {compartido
+                  ? "Las canciones que agreguen se guardan y le aparecen al instante al otro. "
+                  : "Las canciones agregadas aquí solo se guardan en este navegador. "}
+                Si no has iniciado sesión en Spotify en este navegador, solo suenan 30 segundos de cada canción.
+              </p>
+            </motion.form>
+          ) : (
+            <motion.div
+              key="boton-agregar"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="flex items-center gap-3 border-t border-white/10 px-4 py-3"
+            >
+              {(error || aviso) && <p className="min-w-0 flex-1 text-xs text-white/80">{error ?? aviso}</p>}
+              <button
+                type="button"
+                onClick={() => {
+                  setAviso("");
+                  setFormAbierto(true);
+                }}
+                className="ml-auto flex shrink-0 items-center gap-2 rounded-full bg-[#ffd6a8] py-1.5 pr-4 pl-1.5 text-sm font-bold text-vino shadow-md transition hover:scale-105"
+              >
+                <span className="grid h-7 w-7 place-items-center rounded-full bg-vino text-lg leading-none text-[#ffd6a8]">+</span>
+                Agregar canción
+              </button>
+            </motion.div>
+          )}
+        </AnimatePresence>
+        <AnimatePresence>
+          {letraAbierta && cancionActual && (
+            <LetraCancion
+              key={cancionActual.url}
+              titulo={tituloActual}
+              letra={cancionActual.letra}
+              url={cancionActual.url}
+              posicionMs={posicion}
+              editable={Boolean(cancionActual.id)}
+              onGuardar={(texto) => (cancionActual.id ? guardarLetra(cancionActual.id, texto) : Promise.resolve(false))}
+              onCerrar={() => setLetraAbierta(false)}
+              controles={controles}
+              error={error}
+            />
+          )}
+        </AnimatePresence>
       </motion.div>
     </>
   );

@@ -20,7 +20,7 @@ export default function Polaroid({
 }) {
   return (
     <motion.figure
-      className={`relative bg-white p-2 pb-2 sm:p-2.5 sm:pb-3 shadow-[0_15px_35px_-10px_rgba(90,40,30,0.35)] hover:z-10 ${className}`}
+      className={`relative bg-white [backface-visibility:hidden] p-2 pb-2 sm:p-2.5 sm:pb-3 shadow-[0_15px_35px_-10px_rgba(90,40,30,0.35)] hover:z-10 ${className}`}
       initial={{ opacity: 0, y: 30, rotate: giro * 2.2, scale: 0.94 }}
       whileInView={{ opacity: 1, y: 0, rotate: giro, scale: 1 }}
       whileHover={{ rotate: 0, scale: 1.05 }}

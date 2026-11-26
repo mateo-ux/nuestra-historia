@@ -61,7 +61,7 @@ export default function Contador() {
           return (
             <motion.div
               key={etiqueta}
-              className="min-w-[78px] rounded-2xl bg-[#6e2433]/35 px-3 py-3 shadow-sm ring-1 ring-white/40 backdrop-blur-md"
+              className="min-w-[78px] rounded-2xl bg-[#6e2433]/45 sm:bg-[#6e2433]/35 px-3 py-3 shadow-sm ring-1 ring-white/40 sm:backdrop-blur-md"
               initial={{ opacity: 0, y: 14 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}

@@ -23,7 +23,14 @@ export const pareja = {
 //  solo quedan guardadas en ese navegador; para que queden para siempre,
 //  ponlas aquí (la página te da la línea lista para copiar).
 // ============================================================
-export type Cancion = { url: string; titulo?: string; de?: string; nota?: string };
+export type Cancion = {
+  url: string;
+  titulo?: string;
+  de?: string;
+  nota?: string;
+  /** Letra escrita a mano. Si cada línea empieza con [mm:ss] se sincroniza con la canción. */
+  letra?: string;
+};
 
 export const canciones: Cancion[] = [
   // Ejemplo (borra las dos barras // del inicio y pon tu enlace):
