@@ -350,9 +350,10 @@ export default function Reproductor() {
           transform: abierto ? "translateY(0px)" : "translateY(30px)",
           pointerEvents: abierto ? "auto" : "none",
           visibility: abierto ? "visible" : "hidden",
-          transition: `opacity ${PANEL.duracion}s ${PANEL.curva}, transform ${PANEL.duracion}s ${PANEL.curva}, visibility 0s linear ${abierto ? 0 : PANEL.duracion}s`,
+          ["--curva" as string]: PANEL.curva,
+          transition: `opacity ${PANEL.duracion}s var(--curva), transform ${PANEL.duracion}s var(--curva), visibility 0s linear ${abierto ? 0 : PANEL.duracion}s`,
         }}
-        className="fixed right-3 bottom-18 z-40 flex max-h-[calc(100svh-7rem)] w-[calc(100vw-1.5rem)] max-w-sm sm:right-4 sm:bottom-20 flex-col overflow-hidden rounded-3xl bg-[#2a1a22] text-white shadow-2xl ring-1 ring-white/10"
+        className="curva-resorte fixed right-3 bottom-18 z-40 flex max-h-[calc(100svh-7rem)] w-[calc(100vw-1.5rem)] max-w-sm sm:right-4 sm:bottom-20 flex-col overflow-hidden rounded-3xl bg-[#2a1a22] text-white shadow-2xl ring-1 ring-white/10"
         aria-hidden={!abierto}
       >
         <div className="px-5 pt-5 pb-3">

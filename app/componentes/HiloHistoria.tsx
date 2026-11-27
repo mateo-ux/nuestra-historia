@@ -48,7 +48,7 @@ const LATIDO = (() => {
 export function PuntoHilo() {
   return (
     <Aparecer
-      className="absolute top-2 left-4 z-10 grid h-9 w-9 -translate-x-1/2 place-items-center rounded-full bg-atardecer text-white shadow-md md:left-1/2"
+      className="curva-resorte absolute top-2 left-4 z-10 grid h-9 w-9 -translate-x-1/2 place-items-center rounded-full bg-atardecer text-white shadow-md md:left-1/2"
       margen="-120px"
       observarPadre
       desde="scale(0)"

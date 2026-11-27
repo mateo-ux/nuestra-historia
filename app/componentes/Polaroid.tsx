@@ -25,7 +25,7 @@ export default function Polaroid({
   return (
     <figure
       ref={ref}
-      className={`aparecer polaroid relative bg-white p-2 pb-2 sm:p-2.5 sm:pb-3 shadow-[0_15px_35px_-10px_rgba(90,40,30,0.35)] hover:z-10 ${className}`}
+      className={`aparecer polaroid curva-resorte relative bg-white p-2 pb-2 sm:p-2.5 sm:pb-3 shadow-[0_15px_35px_-10px_rgba(90,40,30,0.35)] hover:z-10 ${className}`}
       style={estiloAparecer({
         desde: `translateY(30px) rotate(${giro * 2.2}deg) scale(0.94)`,
         hasta: `translateY(0px) rotate(${giro}deg) scale(1)`,

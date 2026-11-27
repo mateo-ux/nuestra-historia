@@ -99,6 +99,13 @@ body {
     opacity var(--duracion) var(--curva) var(--retraso, 0s),
     transform var(--duracion) var(--curva) var(--retraso, 0s);
 }
+/* Los resortes usan linear(); los iPhone con iOS anterior a 17.2 no lo
+   entienden y se quedarían sin transición. Para ellos, una curva parecida. */
+@supports not (transition-timing-function: linear(0, 1)) {
+  .curva-resorte {
+    --curva: cubic-bezier(0.34, 1.25, 0.64, 1) !important;
+  }
+}
 /* Sobre de la entrada (Intro.tsx): el sello late y la ayuda titila. */
 @keyframes latido-sello {
   0%, 100% { transform: scale(1); }
@@ -116,13 +123,9 @@ body {
   }
 }
 
-@media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after {
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
-  }
-}
+/* No se apagan las animaciones con "reducir movimiento": en el iPhone de Juan
+   esa opción está activa y la página perdía todas sus entradas y transiciones,
+   que son parte del regalo. */
 
 /* Barras de desplazamiento con los colores de la página (durazno y coral). */
 /* Firefox usa las propiedades estándar; Chrome, Edge y Safari usan ::-webkit-scrollbar
