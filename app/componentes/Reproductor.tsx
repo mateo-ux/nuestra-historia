@@ -121,9 +121,13 @@ export default function Reproductor() {
     return () => window.removeEventListener("estado-bienvenida", fn);
   }, []);
 
-  // 1) Cargar el script oficial de Spotify (una sola vez).
+  // 1) Cargar el script oficial de Spotify (una sola vez), recién cuando se abre
+  // el panel por primera vez. El reproductor de Spotify es muy pesado y, si se
+  // carga junto con la página, traba las animaciones del inicio en el celular.
   const [api, setApi] = useState<ApiSpotify | null>(null);
+  const [usarSpotify, setUsarSpotify] = useState(false);
   useEffect(() => {
+    if (!usarSpotify) return;
     // Si el script no responde en 10 s (bloqueado, sin internet), se usa el embed simple.
     const respaldo = setTimeout(() => setModo((m) => (m === "cargando" ? "simple" : m)), 10000);
     window.onSpotifyIframeApiReady = (a) => setApi(a);
@@ -136,7 +140,7 @@ export default function Reproductor() {
       document.body.appendChild(s);
     }
     return () => clearTimeout(respaldo);
-  }, []);
+  }, [usarSpotify]);
 
   // Da play cuando Spotify termine de cargar; con respaldo por si "ready" no llega.
   const reproducirCuandoEsteLista = useCallback((c: Controlador, uri: string) => {
@@ -314,7 +318,10 @@ export default function Reproductor() {
       {/* botón flotante */}
       <button
         ref={boton}
-        onClick={() => setAbierto((a) => !a)}
+        onClick={() => {
+          setAbierto((a) => !a);
+          setUsarSpotify(true);
+        }}
         className="fixed right-3 bottom-3 z-40 flex h-12 min-w-12 items-center justify-center gap-2 rounded-full bg-white px-3 text-sm font-bold text-vino shadow-xl ring-1 ring-vino/10 transition hover:scale-105 sm:right-4 sm:bottom-4 sm:px-4"
         style={{ marginBottom: "env(safe-area-inset-bottom)" }}
         aria-expanded={abierto}

@@ -109,7 +109,7 @@ export default function Intro() {
           >
             <motion.p
               className="titulo-mano mb-12 text-center text-3xl text-white drop-shadow sm:text-4xl"
-              animate={abierto ? { opacity: 0, y: -10 } : { opacity: 1, y: 0 }}
+              animate={abierto ? { opacity: 0, transform: "translateY(-10px)" } : { opacity: 1, transform: "translateY(0px)" }}
               transition={{ duration: 0.4 }}
             >
               Para {pareja.ella}
@@ -119,7 +119,7 @@ export default function Intro() {
               onClick={abrir}
               aria-label="Abrir el sobre"
               className="relative h-[200px] w-[300px] cursor-pointer [perspective:900px] sm:h-[230px] sm:w-[340px]"
-              animate={abierto ? { y: 60 } : { y: 0 }}
+              animate={abierto ? { transform: "translateY(60px)" } : { transform: "translateY(0px)" }}
               transition={{ duration: 0.8, ease: "easeInOut" }}
             >
               {/* sombra aparte y un poco más adentro: si la lleva el fondo, en el
@@ -135,7 +135,7 @@ export default function Intro() {
               <motion.div
                 className="absolute inset-x-4 top-3 bottom-3 flex flex-col items-center justify-start rounded-md bg-crema p-4 pt-5 text-center shadow"
                 style={{ zIndex: 1 }}
-                animate={abierto ? { y: -130 } : { y: 0 }}
+                animate={abierto ? { transform: "translateY(-130px)" } : { transform: "translateY(0px)" }}
                 transition={{ delay: 0.6, duration: 1, ease: "easeOut" }}
               >
                 <span className="titulo-mano text-2xl text-vino">Siempre fuiste tú</span>
@@ -156,7 +156,7 @@ export default function Intro() {
               <motion.div
                 className="absolute inset-x-0 top-0 h-[60%] origin-top overflow-hidden rounded-t-lg drop-shadow-[0_3px_4px_rgba(120,50,40,0.18)]"
                 style={{ zIndex: abierto ? 0 : 3 }}
-                animate={abierto ? { rotateX: 180 } : { rotateX: 0 }}
+                animate={abierto ? { transform: "rotateX(180deg)" } : { transform: "rotateX(0deg)" }}
                 transition={{ duration: 0.6 }}
               >
                 <div className="absolute inset-0 bg-[#f9c6ad]" style={{ clipPath: "polygon(0 0, 100% 0, 50% 100%)" }} />
@@ -165,7 +165,7 @@ export default function Intro() {
               <motion.div
                 className="absolute top-[56%] left-1/2 grid h-14 w-14 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full bg-vino shadow-lg"
                 style={{ zIndex: 4 }}
-                animate={abierto ? { scale: 0, opacity: 0 } : { scale: [1, 1.08, 1] }}
+                animate={abierto ? { transform: "scale(0)", opacity: 0 } : { transform: ["scale(1)", "scale(1.08)", "scale(1)"] }}
                 transition={abierto ? { duration: 0.3 } : { repeat: Infinity, duration: 1.6 }}
               >
                 <Corazon className="h-7 w-7 text-[#ffd6c9]" />

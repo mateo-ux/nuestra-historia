@@ -25,8 +25,8 @@ export function PuntoHilo() {
   return (
     <motion.div
       className="absolute top-2 left-4 z-10 grid h-9 w-9 -translate-x-1/2 place-items-center rounded-full bg-atardecer text-white shadow-md md:left-1/2"
-      initial={{ scale: 0 }}
-      whileInView={{ scale: [0, 1.2, 1] }}
+      initial={{ transform: "scale(0)" }}
+      whileInView={{ transform: ["scale(0)", "scale(1.2)", "scale(1)"] }}
       viewport={{ once: true, margin: "-120px" }}
       transition={{ duration: 0.6, ease: "easeOut" }}
     >
@@ -40,8 +40,8 @@ export function EntradaLateral({ children, desde, className }: { children: React
   return (
     <motion.div
       className={className}
-      initial={{ opacity: 0, x: desde * 40 }}
-      whileInView={{ opacity: 1, x: 0 }}
+      initial={{ opacity: 0, transform: `translateX(${desde * 40}px)` }}
+      whileInView={{ opacity: 1, transform: "translateX(0px)" }}
       viewport={{ once: true, margin: "-80px" }}
       transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
     >

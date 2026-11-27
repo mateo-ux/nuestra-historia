@@ -21,9 +21,9 @@ export default function Polaroid({
   return (
     <motion.figure
       className={`relative bg-white p-2 pb-2 sm:p-2.5 sm:pb-3 shadow-[0_15px_35px_-10px_rgba(90,40,30,0.35)] hover:z-10 ${className}`}
-      initial={{ opacity: 0, y: 30, rotate: giro * 2.2, scale: 0.94 }}
-      whileInView={{ opacity: 1, y: 0, rotate: giro, scale: 1 }}
-      whileHover={{ rotate: 0, scale: 1.05 }}
+      initial={{ opacity: 0, transform: `translateY(30px) rotate(${giro * 2.2}deg) scale(0.94)` }}
+      whileInView={{ opacity: 1, transform: `translateY(0px) rotate(${giro}deg) scale(1)` }}
+      whileHover={{ transform: "translateY(0px) rotate(0deg) scale(1.05)" }}
       viewport={{ once: true, margin: "-60px" }}
       transition={{ type: "spring", stiffness: 110, damping: 16, delay: retraso }}
     >

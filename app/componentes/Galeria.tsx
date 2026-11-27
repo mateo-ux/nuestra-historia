@@ -22,8 +22,8 @@ export default function Galeria() {
           <motion.div
             key={f.src}
             className="mb-4 break-inside-avoid"
-            initial={{ opacity: 0, y: 30, scale: 0.95, rotate: i % 2 ? 1.5 : -1.5 }}
-            whileInView={{ opacity: 1, y: 0, scale: 1, rotate: 0 }}
+            initial={{ opacity: 0, transform: `translateY(30px) scale(0.95) rotate(${i % 2 ? 1.5 : -1.5}deg)` }}
+            whileInView={{ opacity: 1, transform: "translateY(0px) scale(1) rotate(0deg)" }}
             viewport={{ once: true, margin: "-60px" }}
             transition={{ duration: 0.8, delay: (i % 4) * 0.08, ease: [0.22, 1, 0.36, 1] }}
           >
