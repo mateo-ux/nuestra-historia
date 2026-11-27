@@ -131,6 +131,7 @@ export default function LetraCancion({ titulo, letra: letraGuardada, url, posici
         {editando ? (
           <motion.div onUpdate={animarEnJs} key="editar" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="flex min-h-0 flex-1 flex-col gap-2 px-4 pb-4">
             <textarea
+              data-desplazable
               value={borrador}
               onChange={(e) => setBorrador(e.target.value)}
               placeholder={"Escribe o pega la letra aquí.\n\nPara que se mueva con la canción, empieza cada línea con su tiempo:\n[00:12] Primera línea\n[00:17] Segunda línea"}
@@ -161,7 +162,8 @@ export default function LetraCancion({ titulo, letra: letraGuardada, url, posici
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="barra-bonita relative min-h-0 flex-1 overflow-y-auto px-5 pb-6"
+            data-desplazable
+            className="barra-bonita relative min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 pb-6"
           >
             {buscando ? (
               <p className="animate-pulse pt-6 text-center text-sm text-white/75">Buscando la letra…</p>

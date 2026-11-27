@@ -2,10 +2,11 @@
 
 import { AnimatePresence, motion } from "framer-motion";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { canciones as cancionesFijas, musica, pareja, type Cancion } from "@/datos/contenido";
+import { canciones as cancionesFijas, musica, pareja, sitioWeb, type Cancion } from "@/datos/contenido";
 import { buscarLetraEnLinea, useCancionesCompartidas } from "@/lib/useCancionesCompartidas";
 import { animarEnJs, resorte } from "@/lib/aparecer";
 import LetraCancion from "./LetraCancion";
+import { TextoDeslizante, TextoPlegable } from "./TextoLargo";
 
 // El mismo resorte con que se abría el panel (rigidez 260, amortiguación 26).
 const PANEL = resorte(260, 26);
@@ -48,16 +49,27 @@ const sinTildes = (t: string) => t.normalize("NFD").replace(/[\u0300-\u036f]/g, 
 
 export default function Reproductor() {
   const [abierto, setAbierto] = useState(false);
-  const { canciones: agregadas, agregar: guardarCancion, quitar, guardarLetra, compartido, error } = useCancionesCompartidas();
+  const { canciones: agregadas, agregar: guardarCancion, editar: guardarEdicion, quitar, guardarLetra, compartido, error } =
+    useCancionesCompartidas();
   const [titulos, setTitulos] = useState<Record<string, string>>({});
   const [actual, setActual] = useState<string | null>(null);
   const [sonando, setSonando] = useState(false);
   const [bienvenida, setBienvenida] = useState<{ hay: boolean; sonando: boolean }>({ hay: false, sonando: false });
   const [modo, setModo] = useState<"api" | "simple" | "cargando">("cargando");
-  const [form, setForm] = useState({ url: "", titulo: "", de: `${pareja.el} para ${pareja.ella}` });
+  const [form, setForm] = useState({ url: "", titulo: "", de: `${pareja.el} para ${pareja.ella}`, nota: "" });
   const [aviso, setAviso] = useState("");
   // El formulario se puede esconder para que la lista ocupe toda la tarjeta.
   const [formAbierto, setFormAbierto] = useState(false);
+  // Canción que se está editando (null = el formulario agrega una nueva).
+  const [editando, setEditando] = useState<{ id: string; url: string } | null>(null);
+  const formVacio = { url: "", titulo: "", de: `${pareja.el} para ${pareja.ella}`, nota: "" };
+  const cerrarFormulario = () => {
+    setFormAbierto(false);
+    if (editando) {
+      setEditando(null);
+      setForm(formVacio);
+    }
+  };
   const [letraAbierta, setLetraAbierta] = useState(false);
   const [busqueda, setBusqueda] = useState("");
   // Canción que espera confirmación antes de eliminarse.
@@ -67,6 +79,9 @@ export default function Reproductor() {
   const [copiado, setCopiado] = useState<string | null>(null);
   const contenedor = useRef<HTMLDivElement>(null);
   const panel = useRef<HTMLDivElement>(null);
+  // Con el teclado del celular abierto, el panel se sube y se achica para que
+  // el formulario (y su ✕) se vean completos encima del teclado.
+  const [teclado, setTeclado] = useState<{ abajo: number; alto: number } | null>(null);
   const boton = useRef<HTMLButtonElement>(null);
 
   // Tocar fuera del panel lo cierra (útil en celular).
@@ -287,7 +302,28 @@ export default function Reproductor() {
     </div>
   );
 
-  const agregar = async (e: React.FormEvent) => {
+  // Mensaje de WhatsApp con la dedicatoria escrita en la tarjeta y el enlace.
+  // Va al número de quien recibe la canción; sin número, WhatsApp pregunta a quién.
+  // Sin emojis propios: WhatsApp Web los rompía y salían como "�". Se usa
+  // api.whatsapp.com (y no wa.me) porque conserva bien los que escriba la persona.
+  const enlaceWhatsapp = (c: Cancion) => {
+    const nombre = c.titulo || titulos[c.url] || "esta canción";
+    const remitente = c.de?.match(/^(.+) para .+$/)?.[1];
+    const texto = [
+      c.nota || "Te dedico esta canción",
+      "",
+      nombre,
+      c.url,
+      "",
+      `Escúchala en nuestra página: ${sitioWeb}`,
+      ...(remitente ? ["", `Con amor, ${remitente}`] : []),
+    ].join("\n");
+    // El número lo pone el servidor (/api/whatsapp), no queda en la página.
+    const para = c.de?.endsWith(`para ${pareja.ella}`) ? "ella" : c.de?.endsWith(`para ${pareja.el}`) ? "el" : "";
+    return `/api/whatsapp?${para ? `para=${para}&` : ""}texto=${encodeURIComponent(texto)}`;
+  };
+
+  const agregar = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const uri = aUri(form.url);
     if (!uri) {
@@ -296,16 +332,30 @@ export default function Reproductor() {
     }
     // Se guarda siempre el enlace limpio (sin ?si=, intl-es, texto extra, etc.).
     const [, tipo, id] = uri.split(":");
-    const nueva: Cancion = { url: `https://open.spotify.com/${tipo}/${id}`, titulo: form.titulo.trim() || undefined, de: form.de.trim() || undefined };
+    const nueva: Cancion = {
+      url: `https://open.spotify.com/${tipo}/${id}`,
+      titulo: form.titulo.trim() || undefined,
+      de: form.de.trim() || undefined,
+      nota: form.nota.trim() || undefined,
+    };
+    // "Agregar y enviar por WhatsApp": WhatsApp se abre ya, dentro del toque
+    // (si se espera a que termine de guardar, el iPhone bloquea la ventana).
+    const boton = (e.nativeEvent as SubmitEvent).submitter as HTMLButtonElement | null;
+    if (boton?.name === "whatsapp") {
+      window.open(enlaceWhatsapp(nueva), "_blank", "noopener");
+    }
     setAviso("Guardando…");
-    const guardada = await guardarCancion(nueva);
+    const cambioEnlace = !editando || editando.url !== nueva.url;
+    const guardada = editando ? await guardarEdicion(editando.id, nueva) : await guardarCancion(nueva);
     if (!guardada) {
       setAviso("");
       return;
     }
-    setForm((f) => ({ ...f, url: "", titulo: "" }));
+    setForm(formVacio);
     setFormAbierto(false);
-    setAviso(compartido ? "¡Agregada! Ya la puede ver tu amor 💛" : "¡Agregada! 💛");
+    setEditando(null);
+    setAviso(editando ? "¡Cambios guardados! 💛" : compartido ? "¡Agregada! Ya la puede ver tu amor 💛" : "¡Agregada! 💛");
+    if (!cambioEnlace) return;
     reproducir(uri);
     // Busca la letra sola y la deja guardada (si no la encuentra, se puede pegar a mano).
     const letra = await buscarLetraEnLinea(guardada.url);
@@ -316,6 +366,37 @@ export default function Reproductor() {
     `  { url: "${c.url}"${c.titulo ? `, titulo: "${c.titulo}"` : ""}${c.de ? `, de: "${c.de}"` : ""} },`;
 
   const idEmbed = actual ? actual.split(":").slice(1).join("/") : lista[0] ? aUri(lista[0].url)!.split(":").slice(1).join("/") : null;
+
+  useEffect(() => {
+    const vv = window.visualViewport;
+    if (!abierto || !vv) return;
+    const medir = () => {
+      const abajo = window.innerHeight - vv.height - vv.offsetTop;
+      setTeclado(abajo > 80 ? { abajo, alto: vv.height } : null);
+    };
+    medir();
+    vv.addEventListener("resize", medir);
+    vv.addEventListener("scroll", medir);
+    return () => {
+      vv.removeEventListener("resize", medir);
+      vv.removeEventListener("scroll", medir);
+      setTeclado(null);
+    };
+  }, [abierto]);
+
+  // Arrastrar el dedo sobre la tarjeta no mueve la página de atrás: solo se
+  // desplazan las zonas marcadas con data-desplazable (lista, formulario, letra).
+  useEffect(() => {
+    const el = panel.current;
+    if (!el || !abierto) return;
+    const bloquear = (e: TouchEvent) => {
+      const zona = (e.target as Element).closest?.("[data-desplazable]");
+      if (zona && el.contains(zona) && zona.scrollHeight > zona.clientHeight) return;
+      if (e.cancelable) e.preventDefault();
+    };
+    el.addEventListener("touchmove", bloquear, { passive: false });
+    return () => el.removeEventListener("touchmove", bloquear);
+  }, [abierto]);
 
   return (
     <>
@@ -350,17 +431,21 @@ export default function Reproductor() {
           transform: abierto ? "translateY(0px)" : "translateY(30px)",
           pointerEvents: abierto ? "auto" : "none",
           visibility: abierto ? "visible" : "hidden",
+          ...(teclado && { bottom: teclado.abajo + 8, maxHeight: teclado.alto - 16 }),
           ["--curva" as string]: PANEL.curva,
           transition: `opacity ${PANEL.duracion}s var(--curva), transform ${PANEL.duracion}s var(--curva), visibility 0s linear ${abierto ? 0 : PANEL.duracion}s`,
         }}
-        className="curva-resorte fixed right-3 bottom-18 z-40 flex max-h-[calc(100svh-7rem)] w-[calc(100vw-1.5rem)] max-w-sm sm:right-4 sm:bottom-20 flex-col overflow-hidden rounded-3xl bg-[#2a1a22] text-white shadow-2xl ring-1 ring-white/10"
+        className="curva-resorte fixed right-3 bottom-18 z-40 flex max-h-[calc(100svh-9.5rem)] w-[calc(100vw-1.5rem)] sm:max-h-[calc(100svh-7rem)] max-w-sm sm:right-4 sm:bottom-20 flex-col overflow-hidden rounded-3xl bg-[linear-gradient(165deg,#9a4250_0%,#6b2c40_30%,#3d1f30_68%,#2a1a24_100%)] text-white shadow-2xl ring-1 ring-white/15"
         aria-hidden={!abierto}
       >
-        <div className="px-5 pt-5 pb-3">
+        <div className="shrink-0 px-5 pt-5 pb-3">
           <p className="text-[11px] font-bold tracking-[0.3em] text-[#ffd6a8] uppercase">Nuestra playlist</p>
           <h3 className="titulo-mano text-3xl">Canciones que nos dedicamos</h3>
         </div>
 
+        {/* Cuerpo: reproductor, buscador y lista. Cede su espacio primero cuando
+            falta (formulario abierto, teclado o pantalla baja). */}
+        <div data-desplazable className="barra-bonita min-h-0 shrink-[1000] grow overflow-y-auto overscroll-contain pb-2">
         <div className="px-4">
           {modo === "simple" && idEmbed ? (
             <iframe
@@ -413,7 +498,7 @@ export default function Reproductor() {
           </div>
         )}
 
-        <ol className="barra-bonita mt-3 flex-1 space-y-1 overflow-y-auto px-3 pb-2">
+        <ol className="mt-3 space-y-1 px-3">
           {musica.archivo && bienvenida.hay && (!busqueda || sinTildes(musica.titulo).includes(sinTildes(busqueda))) && (
             <li>
               <button
@@ -471,11 +556,13 @@ export default function Reproductor() {
                   >
                     {activa && sonando ? "❚❚" : "▶"}
                   </button>
-                  <button onClick={() => reproducir(uri)} className="min-w-0 flex-1 text-left">
-                    <span className="block truncate font-semibold">{nombre}</span>
-                    {c.de && <span className="block truncate text-xs text-white/75">💌 {c.de}</span>}
-                    {c.nota && <span className="block truncate text-xs text-white/60 italic">{c.nota}</span>}
-                  </button>
+                  <div className="min-w-0 flex-1">
+                    <button onClick={() => reproducir(uri)} className="block w-full text-left">
+                      <TextoDeslizante texto={nombre} className="font-semibold" />
+                      {c.de && <span className="block truncate text-xs text-white/75">💌 {c.de}</span>}
+                    </button>
+                    {c.nota && <TextoPlegable texto={c.nota} className="text-xs text-white/60 italic" />}
+                  </div>
                   {c.id && (
                     <div className="flex shrink-0 gap-1">
                       {!compartido && (
@@ -491,6 +578,21 @@ export default function Reproductor() {
                         {copiado === c.url ? "✓" : "⧉"}
                       </button>
                       )}
+                      <button
+                        title="Editar"
+                        aria-label={`Editar ${nombre}`}
+                        onClick={() => {
+                          setEditando({ id: c.id!, url: c.url });
+                          setForm({ url: c.url, titulo: c.titulo ?? "", de: c.de ?? formVacio.de, nota: c.nota ?? "" });
+                          setAviso("");
+                          setFormAbierto(true);
+                        }}
+                        className="grid place-items-center rounded-full px-2 py-1 text-white/70 hover:bg-white/10"
+                      >
+                        <svg viewBox="0 0 24 24" className="h-3.5 w-3.5 fill-current" aria-hidden>
+                          <path d="M3 17.25V21h3.75L17.8 9.94l-3.75-3.75L3 17.25Zm17.7-10.2a1 1 0 0 0 0-1.42l-2.33-2.33a1 1 0 0 0-1.42 0l-1.83 1.83 3.75 3.75 1.83-1.83Z" />
+                        </svg>
+                      </button>
                       <button
                         title="Quitar"
                         aria-label={`Eliminar ${nombre}`}
@@ -512,6 +614,7 @@ export default function Reproductor() {
             <li className="px-3 py-2 text-sm text-white/75">Todavía no hay canciones. ¡Agrega la primera aquí abajo!</li>
           )}
         </ol>
+        </div>
 
         <AnimatePresence initial={false} mode="wait">
           {formAbierto ? (
@@ -523,13 +626,14 @@ export default function Reproductor() {
               exit={{ height: 0, opacity: 0 }}
               transition={{ duration: 0.25, ease: "easeOut" }}
               onUpdate={animarEnJs}
-              className="space-y-2 overflow-hidden border-t border-white/10 bg-black/20 px-4 pt-3 pb-4"
+              data-desplazable
+              className="barra-bonita min-h-0 shrink space-y-2 overflow-y-auto overscroll-contain border-t border-white/10 bg-black/20 px-4 pt-3 pb-4"
             >
               <div className="flex items-center justify-between">
-                <p className="text-xs font-bold tracking-widest text-[#ffd6a8] uppercase">Agregar canción</p>
+                <p className="text-xs font-bold tracking-widest text-[#ffd6a8] uppercase">{editando ? "Editar canción" : "Agregar canción"}</p>
                 <button
                   type="button"
-                  onClick={() => setFormAbierto(false)}
+                  onClick={cerrarFormulario}
                   className="grid h-7 w-7 place-items-center rounded-full text-sm text-white/70 transition hover:bg-white/10 hover:text-white"
                   aria-label="Cerrar formulario"
                 >
@@ -560,7 +664,29 @@ export default function Reproductor() {
                   <option value="De los dos">De los dos</option>
                 </select>
               </div>
-              <button className="w-full rounded-lg bg-[#ffd6a8] py-2 text-sm font-bold text-vino transition hover:brightness-95">Agregar</button>
+              <textarea
+                data-desplazable
+                value={form.nota}
+                onChange={(e) => setForm({ ...form, nota: e.target.value })}
+                maxLength={200}
+                rows={2}
+                placeholder="Escribe tu dedicatoria (opcional)"
+                aria-label="Dedicatoria"
+                className="block w-full resize-none rounded-lg bg-white/10 px-3 py-2 text-sm placeholder:text-white/50 focus:ring-2 focus:ring-[#ffd6a8] focus:outline-none"
+              />
+              <div className="flex gap-2">
+                <button className="flex-1 rounded-lg bg-[#ffd6a8] py-2 text-sm font-bold text-vino transition hover:brightness-95">{editando ? "Guardar" : "Agregar"}</button>
+                <button
+                  name="whatsapp"
+                  className="flex flex-[1.4] items-center justify-center gap-1.5 whitespace-nowrap rounded-lg bg-[#25d366] py-2 text-sm font-bold text-[#0b3d1f] transition hover:brightness-95"
+                  title="Agrega la canción y abre WhatsApp con tu dedicatoria"
+                >
+                  <svg viewBox="0 0 24 24" className="h-4 w-4 shrink-0 fill-current" aria-label="WhatsApp">
+                    <path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2Zm0 18.2a8.2 8.2 0 0 1-4.2-1.2l-.3-.2-3 .8.8-2.9-.2-.3A8.2 8.2 0 1 1 12 20.2Zm4.5-6.1c-.2-.1-1.5-.7-1.7-.8-.2-.1-.4-.1-.6.1l-.8 1c-.1.2-.3.2-.5.1a6.7 6.7 0 0 1-3.3-2.9c-.3-.4.2-.4.7-1.4.1-.2 0-.3 0-.4l-.8-1.8c-.2-.5-.4-.4-.6-.4h-.5a1 1 0 0 0-.7.3 3 3 0 0 0-.9 2.2 5.2 5.2 0 0 0 1.1 2.7 11.8 11.8 0 0 0 4.5 4c1.7.7 2.3.8 3.2.6.5-.1 1.5-.6 1.7-1.2.2-.6.2-1.1.2-1.2-.1-.1-.2-.2-.5-.3Z" />
+                  </svg>
+                  {editando ? "Guardar y enviar" : "Agregar y enviar"}
+                </button>
+              </div>
               <AnimatePresence>
                 {(error || aviso) && (
                   <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onUpdate={animarEnJs} className="text-xs text-white/80">
@@ -582,13 +708,18 @@ export default function Reproductor() {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onUpdate={animarEnJs}
-              className="flex items-center gap-3 border-t border-white/10 px-4 py-3"
+              className="flex shrink-0 items-center gap-3 border-t border-white/10 px-4 py-3"
             >
               {(error || aviso) && <p className="min-w-0 flex-1 text-xs text-white/80">{error ?? aviso}</p>}
               <button
                 type="button"
                 onClick={() => {
                   setAviso("");
+                  // si se venía de editar, el formulario arranca vacío
+                  if (editando) {
+                    setEditando(null);
+                    setForm(formVacio);
+                  }
                   setFormAbierto(true);
                 }}
                 className="ml-auto flex shrink-0 items-center gap-2 rounded-full bg-[#ffd6a8] py-1.5 pr-4 pl-1.5 text-sm font-bold text-vino shadow-md transition hover:scale-105"

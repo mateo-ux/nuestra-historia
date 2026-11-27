@@ -14,6 +14,9 @@ export const pareja = {
   inicioTexto: "30 de agosto de 2025",
 };
 
+// Dirección pública de la página (va en el mensaje de WhatsApp).
+export const sitioWeb = "https://nuestra-historia-app-kohl.vercel.app";
+
 // ============================================================
 //  NUESTRAS CANCIONES (Spotify)
 //  Copia el enlace de la canción en Spotify (Compartir → Copiar enlace)

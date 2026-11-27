@@ -4,11 +4,30 @@ import Image from "next/image";
 import { useState } from "react";
 import { viaje } from "@/datos/contenido";
 import { CURVA_SUAVE } from "@/lib/aparecer";
+import { useMediaQuery } from "@/lib/useMediaQuery";
 import Aparecer from "./Aparecer";
 import Modal from "./Modal";
 import TituloSeccion from "./TituloSeccion";
 
+// Alto relativo de cada foto (las cuadradas y las 3:4 se alternan).
+const alto = (i: number) => (i % 3 === 1 ? 1 : 4 / 3);
+
+function repartir(columnas: number) {
+  const altos = Array<number>(columnas).fill(0);
+  const grupos = Array.from({ length: columnas }, () => [] as { foto: (typeof viaje.fotos)[number]; i: number }[]);
+  viaje.fotos.forEach((foto, i) => {
+    const c = altos.indexOf(Math.min(...altos));
+    grupos[c].push({ foto, i });
+    altos[c] += alto(i) + 0.05;
+  });
+  return grupos;
+}
+
 export default function Galeria() {
+  // 2 columnas en celular, 3 en tablet y 4 en computador (como antes).
+  const tablet = useMediaQuery("(min-width: 768px)");
+  const computador = useMediaQuery("(min-width: 1024px)");
+  const columnas = computador ? 4 : tablet ? 3 : 2;
   const [abierta, setAbierta] = useState<number | null>(null);
   const foto = abierta === null ? null : viaje.fotos[abierta];
   const mover = (paso: number) =>
@@ -18,37 +37,43 @@ export default function Galeria() {
     <section id="viaje" className="relative overflow-hidden bg-gradient-to-b from-[#fde7da] via-[#ffd2b0] to-[#f7a072] px-4 py-24">
       <TituloSeccion antetitulo={viaje.fecha} titulo={viaje.titulo} subtitulo={`“${viaje.cita}”`} />
 
-      <div className="mx-auto max-w-6xl columns-2 gap-4 md:columns-3 lg:columns-4">
-        {viaje.fotos.map((f, i) => (
-          <Aparecer
-            key={f.src}
-            className="mb-4 break-inside-avoid"
-            margen="-60px"
-            desde={`translateY(30px) scale(0.95) rotate(${i % 2 ? 1.5 : -1.5}deg)`}
-            hasta="translateY(0px) scale(1) rotate(0deg)"
-            duracion={0.8}
-            curva={CURVA_SUAVE}
-            retraso={(i % 4) * 0.08}
-          >
-            <button
-              onClick={() => setAbierta(i)}
-              className="group relative block w-full cursor-zoom-in overflow-hidden rounded-2xl shadow-lg"
-            >
-              <Image
-                src={f.src}
-                alt={f.pie ?? "Foto del viaje"}
-                width={600}
-                height={i % 3 === 1 ? 600 : 800}
-                sizes="(max-width: 768px) 50vw, 300px"
-                className={`w-full object-cover transition duration-700 group-hover:scale-110 ${i % 3 === 1 ? "aspect-square" : "aspect-[3/4]"}`}
-              />
-              {f.pie && (
-                <span className="titulo-mano absolute bottom-2 left-2 max-w-[calc(100%-1rem)] rounded-full bg-black/45 px-2.5 py-0.5 text-left text-base leading-snug text-white sm:inset-x-0 sm:bottom-0 sm:left-0 sm:max-w-none sm:rounded-none sm:bg-transparent sm:bg-gradient-to-t sm:from-black/60 sm:to-transparent sm:px-3 sm:pt-8 sm:pb-2 sm:text-xl sm:opacity-0 sm:transition sm:group-hover:opacity-100">
-                  {f.pie}
-                </span>
-              )}
-            </button>
-          </Aparecer>
+      {/* Columnas armadas a mano (no CSS columns): cada foto va a la columna más
+          corta, así las columnas terminan parejas y las últimas quedan lado a lado. */}
+      <div className="mx-auto flex max-w-6xl items-start gap-4">
+        {repartir(columnas).map((columna, c) => (
+          <div key={c} className="flex min-w-0 flex-1 flex-col gap-4">
+            {columna.map(({ foto: f, i }) => (
+              <Aparecer
+                key={f.src}
+                className="w-full"
+                margen="-60px"
+                desde={`translateY(30px) scale(0.95) rotate(${i % 2 ? 1.5 : -1.5}deg)`}
+                hasta="translateY(0px) scale(1) rotate(0deg)"
+                duracion={0.8}
+                curva={CURVA_SUAVE}
+                retraso={(i % 4) * 0.08}
+              >
+                <button
+                  onClick={() => setAbierta(i)}
+                  className="group relative block w-full cursor-zoom-in overflow-hidden rounded-2xl shadow-lg"
+                >
+                  <Image
+                    src={f.src}
+                    alt={f.pie ?? "Foto del viaje"}
+                    width={600}
+                    height={i % 3 === 1 ? 600 : 800}
+                    sizes="(max-width: 768px) 50vw, 300px"
+                    className={`w-full object-cover transition duration-700 group-hover:scale-110 ${i % 3 === 1 ? "aspect-square" : "aspect-[3/4]"}`}
+                  />
+                  {f.pie && (
+                    <span className="titulo-mano absolute bottom-2 left-2 max-w-[calc(100%-1rem)] rounded-full bg-black/45 px-2.5 py-0.5 text-left text-base leading-snug text-white sm:inset-x-0 sm:bottom-0 sm:left-0 sm:max-w-none sm:rounded-none sm:bg-transparent sm:bg-gradient-to-t sm:from-black/60 sm:to-transparent sm:px-3 sm:pt-8 sm:pb-2 sm:text-xl sm:opacity-0 sm:transition sm:group-hover:opacity-100">
+                      {f.pie}
+                    </span>
+                  )}
+                </button>
+              </Aparecer>
+            ))}
+          </div>
         ))}
       </div>
 

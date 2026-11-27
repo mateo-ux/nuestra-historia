@@ -26,6 +26,8 @@ function explicarError(accion: string, e: { code?: string; message?: string }): 
     return "Falta la tabla de canciones en Supabase. Ejecuta supabase/canciones.sql en el SQL Editor.";
   if (e.code === "42703" || e.code === "PGRST204")
     return "Falta la columna de letras en Supabase. Ejecuta supabase/letras.sql en el SQL Editor.";
+  if (e.code === "42501" && accion === "editar la canción")
+    return "Supabase no dio permiso para editar. Ejecuta supabase/editar.sql en el SQL Editor.";
   if (e.code === "42501")
     return "Supabase no dio permiso. Ejecuta supabase/canciones.sql para crear las políticas.";
   if (e.message?.includes("Invalid API key") || e.code === "401")
@@ -174,5 +176,34 @@ export function useCancionesCompartidas() {
     [supabase],
   );
 
-  return { canciones, agregar, quitar, guardarLetra, compartido, error };
+  // Cambia el enlace, el título, de quién es o la dedicatoria. Si cambia el
+  // enlace, la letra anterior ya no sirve y se borra.
+  const editar = useCallback(
+    async (id: string, c: Cancion): Promise<CancionGuardada | null> => {
+      setError(null);
+      const anterior = canciones.find((x) => x.id === id);
+      const letra = anterior && anterior.url === c.url ? anterior.letra : undefined;
+      if (!supabase) {
+        const editada = { ...c, letra, id: `local-${c.url}` };
+        guardarLocal(leerLocales().map((x) => (x.id === id ? editada : x)));
+        return editada;
+      }
+      const { data, error } = await supabase
+        .from(TABLA)
+        .update({ url: c.url, titulo: c.titulo ?? null, de: c.de ?? null, nota: c.nota ?? null, letra: letra ?? null })
+        .eq("id", id)
+        .select("*")
+        .single();
+      if (error) {
+        setError(explicarError("editar la canción", error));
+        return null;
+      }
+      const editada = aCancion(data as Fila);
+      setCanciones((l) => l.map((x) => (x.id === id ? editada : x)));
+      return editada;
+    },
+    [supabase, canciones],
+  );
+
+  return { canciones, agregar, editar, quitar, guardarLetra, compartido, error };
 }
