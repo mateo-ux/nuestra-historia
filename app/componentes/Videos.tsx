@@ -62,7 +62,8 @@ function Escena({
         Escena {String(numero).padStart(2, "0")}
       </p>
       <div
-        className={`relative overflow-hidden rounded-[1.6rem] border-[6px] border-[#1a1216] bg-black shadow-[0_25px_60px_-10px_rgba(0,0,0,0.7)] ${video.horizontal ? "aspect-video" : "aspect-[9/16]"}`}
+        className={`relative overflow-hidden rounded-[1.6rem] border-[6px] border-[#1a1216] bg-black shadow-[0_25px_60px_-10px_rgba(0,0,0,0.7)] ${video.proporcion ? "" : video.horizontal ? "aspect-video" : "aspect-[9/16]"}`}
+        style={video.proporcion ? { aspectRatio: video.proporcion } : undefined}
       >
         <video
           ref={ref}
@@ -75,7 +76,13 @@ function Escena({
           onLoadedMetadata={(e) => {
             e.currentTarget.currentTime = video.inicio;
           }}
-          className="h-full w-full object-cover"
+          // si el fragmento llega hasta el final del archivo, vuelve a empezar
+          onEnded={(e) => {
+            const el = e.currentTarget;
+            el.currentTime = video.inicio;
+            if (activo) el.play().catch(() => {});
+          }}
+          className={`h-full w-full ${video.proporcion ? "object-contain" : "object-cover"}`}
         />
         {/* barra del fragmento */}
         <div className="absolute inset-x-3 top-3 h-1 overflow-hidden rounded-full bg-white/30">

@@ -3,6 +3,7 @@ import Cartas from "./componentes/Cartas";
 import EscenaRobots from "./componentes/EscenaRobots";
 import EscenaZootopia from "./componentes/EscenaZootopia";
 import Final from "./componentes/Final";
+import Fotomaton from "./componentes/Fotomaton";
 import Galeria from "./componentes/Galeria";
 import Intro from "./componentes/Intro";
 import Libro from "./componentes/Libro";
@@ -25,6 +26,7 @@ export default function Inicio() {
       <Capitulos />
       <EscenaRobots />
       <Galeria />
+      <Fotomaton />
       <Videos />
       <EscenaZootopia />
       <Razones />

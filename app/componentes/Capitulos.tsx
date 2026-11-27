@@ -35,14 +35,19 @@ export default function Capitulos() {
               </EntradaLateral>
 
               <div className={izquierda ? "md:order-2" : "md:order-1"}>
-                <div className="flex flex-wrap items-center justify-center gap-4 sm:flex-nowrap">
+                {/* Con 4 fotos se acomodan 2 y 2 (en fila no caben sin achicarse demasiado). */}
+                <div className={`flex flex-wrap items-center justify-center gap-4 ${c.fotos.length > 3 ? "" : "sm:flex-nowrap"}`}>
                   {c.fotos.map((foto, j) => (
                     <Polaroid
                       key={foto.src}
                       foto={foto}
                       giro={giros[(i + j) % giros.length]}
                       retraso={0.15 + j * 0.12}
-                      className={`w-[46%] ${c.fotos.length > 2 ? "sm:w-[36%]" : "sm:w-[48%]"} ${j > 0 ? (c.fotos.length > 2 ? "sm:-ml-4" : "sm:-ml-10") : ""} ${j === 1 ? "sm:mt-12" : ""}`}
+                      className={
+                        c.fotos.length > 3
+                          ? `w-[46%] sm:w-[42%] ${j % 2 === 1 ? "sm:mt-10 sm:-ml-4" : ""} ${j > 1 ? "sm:-mt-6" : ""}`
+                          : `w-[46%] ${c.fotos.length > 2 ? "sm:w-[36%]" : "sm:w-[48%]"} ${j > 0 ? (c.fotos.length > 2 ? "sm:-ml-4" : "sm:-ml-10") : ""} ${j === 1 ? "sm:mt-12" : ""}`
+                      }
                     />
                   ))}
                 </div>

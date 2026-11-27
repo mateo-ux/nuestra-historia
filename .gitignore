@@ -45,3 +45,6 @@ next-env.d.ts
 /public/Revista/
 /public/fotos/
 /_para_borrar/
+
+# fotos privadas que no usa la página (no subir)
+/fotos-sin-usar/

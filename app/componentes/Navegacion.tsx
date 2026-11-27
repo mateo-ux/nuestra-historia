@@ -9,6 +9,7 @@ const enlaces = [
   { id: "libro", texto: "Nuestro libro", corto: "Libro", icono: "📖" },
   { id: "historia", texto: "Nuestra historia", corto: "Historia", icono: "💞" },
   { id: "viaje", texto: "El viaje", corto: "Viaje", icono: "🌅" },
+  { id: "picos", texto: "Picos y lengüitas", corto: "Picos", icono: "😘" },
   { id: "videos", texto: "Nuestra película", corto: "Videos", icono: "🎬" },
   { id: "razones", texto: "Razones", corto: "Razones", icono: "💗" },
   { id: "cartas", texto: "Ábrela cuando…", corto: "Cartas", icono: "💌" },

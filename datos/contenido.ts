@@ -75,7 +75,9 @@ export const libro = [
   { src: p(17), ancho: 1538, alto: 1982, titulo: "Te amo" },
 ];
 
-export type Foto = { src: string; pie?: string };
+// encuadre: qué parte de la foto se ve en el recorte (object-position), por
+// ejemplo "30% 50%" para una foto horizontal dentro de una polaroid vertical.
+export type Foto = { src: string; pie?: string; encuadre?: string };
 
 export type Capitulo = {
   numero: string;
@@ -93,10 +95,10 @@ export const capitulos: Capitulo[] = [
     fecha: "Agosto 2025",
     cita: "No había fuegos artificiales en el cielo ni señales mágicas anunciando que algo importante estaba por suceder.",
     texto:
-      "Te llevé flores y un libro lleno de páginas en blanco. Adentro iba una pregunta que llevaba años esperando el momento correcto. Dijiste que sí, y desde esa noche todo empezó a escribirse solo.",
+      "Te llevé flores y un libro lleno de páginas en blanco. Adentro iba una pregunta que llevaba años esperando la respuesta. Dijiste que sí, y desde esa noche todo empezó a escribirse solo.",
     fotos: [
       { src: f("9a1bc1f4-e9df-4112-80f0-e572cdac0eab"), pie: "Nuestra primera foto" },
-      { src: f("img_0058"), pie: "Nuestras primeras fotos" },
+      { src: f("img_0058"), pie: "Peinandote" },
       { src: f("img_0332"), pie: "Esa sonrisa" },
     ],
   },
@@ -124,6 +126,7 @@ export const capitulos: Capitulo[] = [
       { src: f("9b90bb83-ea9a-4f8a-85f0-fd395e91c1fe"), pie: "Tu carta rompecabezas" },
       { src: f("img_2068"), pie: "Torta de cumpleaños" },
       { src: f("img_2631"), pie: "Noche de mascarillas" },
+      { src: f("img_2756"), pie: "Haciéndote tu carta", encuadre: "30% 50%" },
     ],
   },
   {
@@ -132,7 +135,7 @@ export const capitulos: Capitulo[] = [
     fecha: "Julio 2026",
     cita: "El amor no consiste en evitar las tormentas, sino en aprender a sostener el paraguas juntos cuando la lluvia aparece.",
     texto:
-      "No todo fue fácil, pero cada día difícil terminó enseñándonos algo valioso: que tu mano y la mía encajan incluso cuando llueve.",
+      "No todo ha sido fácil, pero cada día difícil terminó enseñándonos algo valioso: que tu mano y la mía encajan incluso cuando llueve.",
     fotos: [
       { src: f("img_3887"), pie: "Tu mano y la mía" },
       { src: f("img_3059"), pie: "Refugio" },
@@ -167,6 +170,34 @@ export const capitulos: Capitulo[] = [
 ];
 
 // Galería del viaje a la playa (28 sep – 2 oct 2026)
+// Sección "Picos y lenguitas": tiras de fotomatón. Cada foto se voltea al
+// tocarla y atrás aparece su pie (texto corto).
+export const picos = {
+  antetitulo: "Fotomatón",
+  titulo: "Picos y lengüitas",
+  subtitulo: "Las caras que solo me haces a mí.",
+  tiras: [
+    {
+      nombre: "picos",
+      fotos: [
+        { src: f("img_2588"), pie: "Pico con antifaz" },
+        { src: f("img_1701"), pie: "Pico con lentes, mi favorito" },
+        { src: f("img_4442"), pie: "Super pico" },
+        { src: f("img_3057"), pie: "Después del pico, la sonrisa", encuadre: "43% 50%" },
+      ],
+    },
+    {
+      nombre: "lengüitas",
+      fotos: [
+        { src: f("img_4457"), pie: "La lengüita parchada" },
+        { src: f("img_4459"), pie: "Modo playa: activado" },
+        { src: f("img_4083"), pie: "Mi vista favorita del mar" },
+        { src: f("img_4443"), pie: "Lengüita con frio y mano de dormida" },
+      ],
+    },
+  ] as { nombre: string; fotos: Foto[] }[],
+};
+
 export const viaje = {
   titulo: "El viaje del aniversario",
   fecha: "28 de septiembre – 2 de octubre de 2026",
@@ -201,19 +232,19 @@ export const despues: Foto[] = [
 export const capituloDos = {
   inicio: "30 de agosto de 2026",
   mensaje:
-    "Capítulo 2: empezó el 30 de agosto de 2026, el día que cumplimos nuestro primer año. Ahora lo seguimos escribiendo juntos, página por página. Siempre fuiste tú.",
+    "Temporada 2: empezó el 30 de agosto de 2026, el día que cumplimos nuestro primer año. Ahora la seguimos escribiendo juntos, página por página. Siempre fuiste tú.",
 };
 
-// Tarjetas que se voltean: "razones por las que te quiero"
+// Tarjetas que se voltean: "razones por las que te amo"
 export const razones = [
   { frente: "Tu risa", detras: "Porque cuando te ríes, todo lo demás deja de importar." },
   { frente: "Tus caras chistosas", detras: "Porque sacas la lengua en las fotos y me robas el corazón cada vez." },
   { frente: "Tu forma de cuidarme", detras: "Porque me cuidas como quien cuida algo valioso." },
   { frente: "Nuestro libro", detras: "Porque convertiste nuestra historia en un libro y me hiciste llorar de felicidad." },
   { frente: "Tus abrazos", detras: "Porque en tus abrazos encontré mi hogar." },
-  { frente: "Tu valentía", detras: "Porque te atreves a todo: mar, moto, cascadas… y a quererme." },
+  { frente: "Tu valentía", detras: "Porque te atreves a todo: mar, moto, acampar, cascadas… y a quererme." },
   { frente: "Tus detalles", detras: "Porque escribes cartas en rompecabezas y dibujas a tu ingeniero favorito." },
-  { frente: "Tu mirada", detras: "Porque detrás de esas gafas están los ojos más bonitos del mundo." },
+  { frente: "Tu mirada", detras: "Porque detrás de esas gafitas están los ojos más bonitos del mundo." },
   { frente: "Los planes", detras: "Porque contigo hasta un día normal se vuelve aventura." },
   { frente: "Las tormentas", detras: "Porque cuando llueve, sostienes el paraguas conmigo." },
   { frente: "Tus sueños", detras: "Porque tus sueños ya son también los míos." },
@@ -273,16 +304,20 @@ export type Video = {
   inicio: number;
   fin: number;
   horizontal?: boolean;
+  // Para un video que debe verse entero, sin recortar los bordes: su
+  // proporción ancho/alto (por ejemplo 480 / 368). El marco toma esa forma.
+  proporcion?: number;
 };
 
 export const videos: Video[] = [
-  { archivo: v("img_3897.mp4"), portada: v("img_3897.webp"), titulo: "Cita de sushi", texto: "Tú peleando con los palitos y yo enamorándome otra vez.", inicio: 5, fin: 15 },
-  { archivo: v("img_4218.mp4"), portada: v("img_4218.webp"), titulo: "En las dunas de La Guajira", texto: "Yo abajo, tú allá arriba saludándome. Siempre llegas primero.", inicio: 3, fin: 13 },
-  { archivo: v("img_4511.mp4"), portada: v("img_4511.webp"), titulo: "Besitos desde la playa", texto: "El mejor video de todo el viaje.", inicio: 0, fin: 7.4 },
+  { archivo: v("img_3897.mp4"), portada: v("img_3897.webp"), titulo: "Cita de sushi", texto: "Tú peleando con los palitos y yo enamorándome mas.", inicio: 5, fin: 15 },
+  { archivo: v("img_4218.mp4"), portada: v("img_4218.webp"), titulo: "En las dunas de La Guajira", texto: "Siempre llegas primero.", inicio: 3, fin: 13 },
+  { archivo: v("img_4511.mp4"), portada: v("img_4511.webp"), titulo: "Besitos desde la playa", texto: "El video mas bonito de todo el viaje.", inicio: 0, fin: 7.4 },
   { archivo: v("img_4516.mp4"), portada: v("img_4516.webp"), titulo: "El mar a nuestros pies", texto: "Donde el mar abraza la arena.", inicio: 0, fin: 14 },
+  { archivo: v("video_2026-11-27.mp4"), portada: v("video_2026-11-27.webp"), titulo: "1 de octubre, en la playa", texto: "Tal cual lo grabamos: tú, el mar y nuestros besos.", inicio: 0, fin: 42.3, horizontal: true, proporcion: 480 / 368 },
   { archivo: v("img_5282.mp4"), portada: v("img_5282.webp"), titulo: "Karaoke en la piscina", texto: "Tu concierto privado (y yo tu fan número uno).", inicio: 0, fin: 17 },
-  { archivo: v("img_5285.mp4"), portada: v("img_5285.webp"), titulo: "¿Y este baile?", texto: "Nadie baila como nosotros. Literal, nadie.", inicio: 0, fin: 14 },
-  { archivo: v("img_5286.mp4"), portada: v("img_5286.webp"), titulo: "Segunda ronda", texto: "Porque una vez nunca es suficiente.", inicio: 8, fin: 20 },
+  { archivo: v("img_5285.mp4"), portada: v("img_5285.webp"), titulo: "¿Y este baile?", texto: "Nadie baila como nosotros.", inicio: 0, fin: 14 },
+  { archivo: v("img_5286.mp4"), portada: v("img_5286.webp"), titulo: "Segunda ronda", texto: "Golpes de amor jajaja.", inicio: 8, fin: 20 },
   { archivo: v("img_5293.mp4"), portada: v("img_5293.webp"), titulo: "Noche de fiesta y familia", texto: "Sabores exoticos.", inicio: 65, fin: 80, horizontal: true },
 ];
 
@@ -291,12 +326,14 @@ export const videos: Video[] = [
 //  Si pones imágenes PNG (fondo transparente) en public/personajes/
 //  con estos nombres, la página las usa en vez de los dibujos.
 //  Las versiones "guino", "feliz" y "sonrisa" son opcionales.
+//  Si las agregas (zorro-guino.png, coneja-feliz.png, perezoso-sonrisa.png),
+//  ponlas primero en su lista, por ejemplo ["/personajes/zorro-guino.png", "/personajes/zorro.png"].
 // ============================================================
 export const personajes = {
   zorro: ["/personajes/zorro.png"],
-  zorroGuino: ["/personajes/zorro-guino.png", "/personajes/zorro.png"],
+  zorroGuino: ["/personajes/zorro.png"],
   coneja: ["/personajes/coneja.png"],
-  conejaFeliz: ["/personajes/coneja-feliz.png", "/personajes/coneja.png"],
+  conejaFeliz: ["/personajes/coneja.png"],
   perezoso: ["/personajes/perezoso.png"],
-  perezosoSonrisa: ["/personajes/perezoso-sonrisa.png", "/personajes/perezoso.png"],
+  perezosoSonrisa: ["/personajes/perezoso.png"],
 };

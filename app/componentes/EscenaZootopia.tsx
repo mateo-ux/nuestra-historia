@@ -2,10 +2,12 @@
 
 import { AnimatePresence, motion } from "framer-motion";
 import { animarEnJs } from "@/lib/aparecer";
-import { useEffect, useRef, useState } from "react";
-import { personajes } from "@/datos/contenido";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { pareja, personajes } from "@/datos/contenido";
+import { useGrabadora, useVoces, type ClaveVoz } from "@/lib/useVoces";
 import Corazon from "./Corazon";
 import ImagenPersonaje from "./ImagenPersonaje";
+import RenglonVoz from "./RenglonVoz";
 import Revelar from "./Revelar";
 import TituloSeccion from "./TituloSeccion";
 
@@ -220,8 +222,114 @@ function Perezoso({ sonrisa, ojos }: { sonrisa: number; ojos: number }) {
 
 const mensajeLento = "Te... a... mo...";
 
+// El guion de la zanahoria grabadora: un renglón para cada uno.
+const guion = [
+  { clave: "zanahoria-1", icono: "🦊", quien: pareja.el, texto: "«Te amo, conejita. Y no, no es ninguna de mis estafas.»" },
+  { clave: "zanahoria-2", icono: "🐰", quien: pareja.ella, texto: "«Lo sé, zorro desgraciado. Yo también te amo.»" },
+] as const;
+
+const vocesFlash = [
+  { clave: "flash-lento", icono: "🦥", etiqueta: "Mateo Flash", texto: "«Te… a… mo…»" },
+  { clave: "flash-normal", icono: "💛", etiqueta: "Mateo", texto: "«Te amo.»" },
+] as const;
+
+const esperar = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
+// Un solo reproductor de audio para toda la escena. Mientras suena una voz,
+// la canción de fondo se pausa y vuelve al terminar.
+function useReproductorVoz() {
+  const audio = useRef<HTMLAudioElement | null>(null);
+  const fin = useRef<(() => void) | null>(null);
+  const [sonando, setSonando] = useState<string | null>(null);
+
+  const parar = useCallback(() => {
+    const a = audio.current;
+    if (a) a.pause();
+    fin.current?.();
+  }, []);
+
+  // Devuelve una promesa que se cumple cuando la voz termina (o se detiene).
+  const tocar = useCallback((id: string, url: string) => {
+    fin.current?.();
+    const a = (audio.current ??= new Audio());
+    a.preload = "auto";
+    a.src = url;
+    setSonando(id);
+    window.dispatchEvent(new Event("pausar-musica"));
+    window.dispatchEvent(new Event("pausar-spotify"));
+    return new Promise<void>((resolver) => {
+      const terminar = () => {
+        a.removeEventListener("ended", terminar);
+        a.removeEventListener("error", terminar);
+        fin.current = null;
+        setSonando(null);
+        window.dispatchEvent(new Event("reanudar-musica"));
+        resolver();
+      };
+      fin.current = terminar;
+      a.addEventListener("ended", terminar);
+      a.addEventListener("error", terminar);
+      a.play().catch(terminar);
+    });
+  }, []);
+
+  useEffect(() => () => audio.current?.pause(), []);
+  return { sonando, tocar, parar };
+}
+
 export default function EscenaZootopia() {
   const [grabacion, setGrabacion] = useState(false);
+  const [linea, setLinea] = useState<number | null>(null);
+  const turno = useRef(0);
+  const { voces, guardar, borrar, guardando, error, compartido } = useVoces();
+  const { grabando, segundos, aviso, empezar, detener } = useGrabadora((clave, audio) => void guardar(clave, audio));
+  const { sonando, tocar, parar } = useReproductorVoz();
+
+  // Reproduce el guion completo: el renglón de él y luego el de ella. Si un
+  // renglón todavía no está grabado, solo se resalta un momento.
+  const reproducirGuion = async () => {
+    if (grabacion) {
+      turno.current += 1;
+      parar();
+      setLinea(null);
+      setGrabacion(false);
+      return;
+    }
+    const mio = ++turno.current;
+    setGrabacion(true);
+    for (let i = 0; i < guion.length; i++) {
+      if (turno.current !== mio) return;
+      setLinea(i);
+      const voz = voces[guion[i].clave];
+      if (voz) await tocar(guion[i].clave, voz.url);
+      else await esperar(2200);
+    }
+    if (turno.current === mio) setLinea(null);
+  };
+
+  const controlesVoz = (clave: ClaveVoz) => ({
+    hayVoz: !!voces[clave],
+    grabando: grabando === clave,
+    otroGrabando: grabando !== null && grabando !== clave,
+    segundos,
+    guardando: guardando === clave,
+    sonando: sonando === clave,
+    alGrabar: () => {
+      parar();
+      void empezar(clave);
+    },
+    alDetener: detener,
+    alEscuchar: () => {
+      if (sonando === clave) parar();
+      else if (voces[clave]) void tocar(clave, voces[clave].url);
+    },
+    alBorrar: () => {
+      if (sonando === clave) parar();
+      void borrar(clave);
+    },
+  });
+
+  const avisoVoz = aviso ?? error;
   const [texto, setTexto] = useState("");
   const [escribiendo, setEscribiendo] = useState(false);
   const temporizador = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -234,6 +342,8 @@ export default function EscenaZootopia() {
     if (escribiendo) return;
     setTexto("");
     setEscribiendo(true);
+    const vozFlash = voces["flash-lento"];
+    if (vozFlash) setTimeout(() => void tocar("flash-lento", vozFlash.url), 1200);
     let i = 0;
     const paso = () => {
       i += 1;
@@ -256,30 +366,35 @@ export default function EscenaZootopia() {
       <TituloSeccion
         antetitulo="Una ciudad donde cualquiera puede ser lo que quiera"
         titulo="El zorro y la conejita"
-        subtitulo="Ella siempre tiene un plan. Él siempre tiene una sonrisa pícara. Juntos, el mejor equipo de la ciudad."
+        subtitulo="Él siempre tiene un plan una sonrisa pícara. Juntos, el mejor equipo de la ciudad."
       />
 
       <div className="mx-auto grid max-w-5xl grid-cols-1 gap-10 lg:grid-cols-[1.3fr_1fr] [&>*]:min-w-0">
         {/* zorro y coneja */}
         <Revelar className="relative rounded-[2rem] bg-white/70 p-4 shadow-xl ring-1 ring-white sm:p-6">
           <div className="mb-2 flex min-h-[8.5rem] items-end">
-          <AnimatePresence>
-            {grabacion && (
-              <motion.div
-                onUpdate={animarEnJs}
-                className="mx-auto w-full max-w-md rounded-2xl bg-white p-4 text-center shadow-lg ring-1 ring-durazno"
-                initial={{ opacity: 0, scale: 0.8, y: 10 }}
-                animate={{ opacity: 1, scale: 1, y: 0 }}
-                exit={{ opacity: 0, scale: 0.8 }}
-              >
-                <p className="text-[11px] font-bold tracking-widest text-terracota uppercase">🔴 Grabación #001</p>
-                <p className="texto-libro mt-1 text-lg text-tinta">
-                  «Te quiero, conejita. Y no, no es ninguna de mis estafas.»
-                </p>
-                <p className="texto-libro mt-1 text-lg text-vino">«Lo sé, zorro tonto. Yo también te quiero.»</p>
-              </motion.div>
-            )}
-          </AnimatePresence>
+            <AnimatePresence>
+              {grabacion && (
+                <motion.div
+                  onUpdate={animarEnJs}
+                  className="mx-auto w-full max-w-md rounded-2xl bg-white p-4 text-center shadow-lg ring-1 ring-durazno"
+                  initial={{ opacity: 0, scale: 0.8, y: 10 }}
+                  animate={{ opacity: 1, scale: 1, y: 0 }}
+                  exit={{ opacity: 0, scale: 0.8 }}
+                >
+                  <p className="text-[11px] font-bold tracking-widest text-terracota uppercase">🔴 Grabación #001</p>
+                  {guion.map((g, i) => (
+                    <p
+                      key={g.clave}
+                      className={`texto-libro mt-1 rounded-lg px-1 text-lg transition-[opacity,background-color] duration-300 ${i === 0 ? "text-tinta" : "text-vino"} ${linea === null ? "" : linea === i ? "bg-[#fde3d2]" : "opacity-50"
+                        }`}
+                    >
+                      {g.texto}
+                    </p>
+                  ))}
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
           <div className="flex items-end justify-center gap-2">
             <motion.div className="h-52 w-[50%] max-w-56 sm:h-72 sm:w-56" animate={{ x: grabacion ? 10 : 0 }}>
@@ -294,12 +409,33 @@ export default function EscenaZootopia() {
 
           <div className="mt-4 text-center">
             <button
-              onClick={() => setGrabacion((g) => !g)}
+              onClick={reproducirGuion}
               className="inline-flex items-center gap-2 rounded-full bg-[#f28c38] px-5 py-3 text-sm font-bold text-white sm:px-6 sm:text-base shadow-lg transition hover:scale-105 active:scale-95"
             >
               <span className="text-xl">🥕</span>
               {grabacion ? "Detener grabación" : "Reproducir la zanahoria grabadora"}
             </button>
+          </div>
+
+          {/* cada uno graba su renglón desde su celular */}
+          <div className="relative z-10 mx-auto mt-5 max-w-md space-y-2">
+            <p className="text-center text-[11px] font-bold tracking-[0.25em] text-terracota uppercase">
+              🎙️ Graben su renglón
+            </p>
+            {guion.map((g, i) => (
+              <RenglonVoz
+                key={g.clave}
+                icono={g.icono}
+                etiqueta={`Lo dice ${g.quien}`}
+                texto={g.texto}
+                resaltado={linea === i}
+                {...controlesVoz(g.clave)}
+              />
+            ))}
+            {!compartido && (
+              <p className="text-center text-xs text-tinta/60">Sin Supabase, las grabaciones se pierden al recargar.</p>
+            )}
+            {avisoVoz && <p className="text-center text-xs font-semibold text-[#b8334a]">{avisoVoz}</p>}
           </div>
 
           {grabacion && (
@@ -350,6 +486,13 @@ export default function EscenaZootopia() {
           >
             {escribiendo ? "Espera… ya casi…" : "Dime algo rápido"}
           </button>
+
+          <div className="mt-5 w-full max-w-md space-y-2">
+            <p className="text-[11px] font-bold tracking-[0.25em] text-[#8a6f53] uppercase">🎙️ Las voces de Flash</p>
+            {vocesFlash.map((v) => (
+              <RenglonVoz key={v.clave} icono={v.icono} etiqueta={v.etiqueta} texto={v.texto} {...controlesVoz(v.clave)} />
+            ))}
+          </div>
         </Revelar>
       </div>
     </section>

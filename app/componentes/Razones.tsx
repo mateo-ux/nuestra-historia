@@ -64,7 +64,7 @@ export default function Razones() {
     <section id="razones" className="fondo-papel px-4 py-24">
       <TituloSeccion
         antetitulo="Toca cada tarjeta"
-        titulo="Razones por las que te quiero"
+        titulo="Razones por las que te amo"
         subtitulo={`Son ${razones.length}, pero podría seguir escribiendo toda la vida.`}
       />
       <div className="mx-auto grid max-w-5xl grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">

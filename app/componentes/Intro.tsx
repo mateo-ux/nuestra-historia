@@ -3,7 +3,49 @@
 import { useEffect, useRef, useState } from "react";
 import { musica, pareja } from "@/datos/contenido";
 import { CURVA_ENTRADA_SALIDA, CURVA_NORMAL, CURVA_SALIDA } from "@/lib/aparecer";
+import Image from "next/image";
 import Corazon from "./Corazon";
+
+const fotoCarta = "/optimizado/fotos/img_4447.webp";
+
+// Girasol pequeño dibujado (pétalos alrededor de un centro café).
+function Girasol({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" className={className} aria-hidden="true">
+      {Array.from({ length: 12 }, (_, i) => (
+        <ellipse key={i} cx="12" cy="5.2" rx="2.1" ry="4.2" fill="#f6c343" transform={`rotate(${i * 30} 12 12)`} />
+      ))}
+      <circle cx="12" cy="12" r="4.4" fill="#7a4a24" />
+      <circle cx="12" cy="12" r="2.6" fill="#5c3418" />
+    </svg>
+  );
+}
+
+// Atardecer pequeño: medio sol sobre el horizonte y dos líneas de agua.
+function Atardecer({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 40 22" className={className} aria-hidden="true">
+      <path d="M8 15a12 12 0 0 1 24 0z" fill="#f08a5d" />
+      <path d="M20 3v-2.5M10.5 6.5 9 5M29.5 6.5 31 5" stroke="#f08a5d" strokeWidth="1.3" strokeLinecap="round" />
+      <path d="M3 15h34M9 18.2h22M15 21h10" stroke="#e8673c" strokeWidth="1.2" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+// Adornos muy suaves de la carta: no tapan el texto ni la foto.
+function DecoracionCarta() {
+  return (
+    <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden rounded-md">
+      <Corazon className="absolute top-3 left-3 h-3 w-3 -rotate-12 text-rosa opacity-80" />
+      <Corazon className="absolute top-8 left-7 h-2 w-2 rotate-12 text-atardecer opacity-50" />
+      <Corazon className="absolute top-4 right-9 h-2 w-2 rotate-6 text-rosa opacity-70" />
+      <Girasol className="absolute top-2.5 right-3 h-5 w-5 rotate-12 opacity-85" />
+      <Girasol className="absolute top-[5.6rem] left-5 h-4 w-4 -rotate-12 opacity-75 sm:left-8" />
+      <Atardecer className="absolute top-[5.4rem] right-5 h-4 w-8 opacity-60 sm:right-8" />
+      <Corazon className="absolute top-[7.4rem] right-10 h-2.5 w-2.5 -rotate-6 text-vino opacity-35 sm:right-14" />
+    </div>
+  );
+}
 
 // Sobre sellado al entrar + botón flotante de música.
 export default function Intro() {
@@ -69,7 +111,7 @@ export default function Intro() {
       const a = audio.current;
       if (a && estabaSonando) {
         estabaSonando = false;
-        a.play().then(() => setSonando(true)).catch(() => {});
+        a.play().then(() => setSonando(true)).catch(() => { });
       }
     };
     window.addEventListener("pausar-musica", pausar);
@@ -93,7 +135,7 @@ export default function Intro() {
     const fn = () => {
       const a = audio.current;
       if (!a) return;
-      if (a.paused) a.play().then(() => setSonando(true)).catch(() => {});
+      if (a.paused) a.play().then(() => setSonando(true)).catch(() => { });
       else {
         a.pause();
         setSonando(false);
@@ -128,7 +170,7 @@ export default function Intro() {
               transition: `opacity 0.4s ${CURVA_NORMAL}, transform 0.4s ${CURVA_NORMAL}`,
             }}
           >
-            Para {pareja.ella}
+            Para mi morenita
           </p>
 
           <button
@@ -158,8 +200,27 @@ export default function Intro() {
                 transition: `transform 1s ${CURVA_SALIDA} 0.6s`,
               }}
             >
-              <span className="titulo-mano text-2xl text-vino">Siempre fuiste tú</span>
-              <span className="texto-libro mt-1 text-sm text-tinta/70">una historia para ti</span>
+              <DecoracionCarta />
+              <span className="titulo-mano relative text-2xl text-vino">Siempre fuiste tú</span>
+              <span className="texto-libro relative mt-1 text-sm text-tinta/70">una historia para ti</span>
+              {/* foto pegada con cinta, pequeña y un poco torcida */}
+              <div className="relative mt-2.5 -rotate-3 rounded-[2px] bg-white p-[3px] pb-[9px] shadow-[0_2px_6px_rgba(90,40,30,0.22)]">
+                <div className="relative h-[58px] w-[78px] overflow-hidden sm:h-[78px] sm:w-[104px]">
+                  <Image
+                    src={fotoCarta}
+                    alt="Nosotros en el mar"
+                    fill
+                    sizes="(min-width: 640px) 104px, 78px"
+                    loading="eager"
+                    className="object-cover object-[50%_72%]"
+                  />
+                </div>
+                <span
+                  aria-hidden
+                  className="absolute -top-2 left-1/2 h-3.5 w-10 -translate-x-1/2 rotate-[4deg] bg-[#f7b9b0]/60 shadow-[0_1px_1px_rgba(120,60,50,0.08)]"
+                  style={{ clipPath: "polygon(3% 0, 97% 4%, 100% 50%, 96% 100%, 2% 96%, 0 50%)" }}
+                />
+              </div>
             </div>
             {/* bolsillo: solapas laterales e inferior, cubren todo menos el triángulo de arriba */}
             <div className="absolute inset-0 overflow-hidden rounded-lg" style={{ zIndex: 2 }}>

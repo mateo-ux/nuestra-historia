@@ -35,7 +35,7 @@ export default function Polaroid({
       })}
     >
       <div className="relative aspect-[4/5] w-full overflow-hidden bg-durazno">
-        <Image src={foto.src} alt={foto.pie ?? "Foto de nosotros"} fill sizes={sizes} className="object-cover" />
+        <Image src={foto.src} alt={foto.pie ?? "Foto de nosotros"} fill sizes={sizes} className="object-cover" style={foto.encuadre ? { objectPosition: foto.encuadre } : undefined} />
       </div>
       <figcaption className="titulo-mano flex min-h-8 items-center justify-center px-1 pt-1.5 text-center text-base leading-tight text-tinta/80 sm:min-h-9 sm:text-xl">
         {foto.pie}

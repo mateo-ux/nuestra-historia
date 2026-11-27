@@ -50,7 +50,7 @@ export default function Final() {
 
         <Revelar retraso={0.2} className="mx-auto mt-16 max-w-xl rounded-[2rem] bg-white/15 p-5 ring-1 sm:p-8 ring-white/30 sm:backdrop-blur-md">
           <p className="titulo-mano text-4xl">{pareja.ella},</p>
-          <p className="texto-libro mt-2 text-2xl">¿escribimos juntos el capítulo 2?</p>
+          <p className="texto-libro mt-2 text-2xl">¿escribimos juntos la segunda temporada?</p>
           <p className="mt-1 text-sm text-white/85">Nuestro segundo año, desde el {capituloDos.inicio}</p>
 
           <div className="relative mt-8 flex min-h-[90px] items-center justify-center gap-3 sm:gap-6">

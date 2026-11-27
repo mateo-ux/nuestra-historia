@@ -36,14 +36,14 @@ export default function Portada() {
           <div className="relative mx-auto h-56 w-56 sm:h-64 sm:w-64">
             <div className="absolute inset-0 animate-[flotar_6s_ease-in-out_infinite] rounded-full border-[6px] border-white/80 bg-durazno shadow-2xl">
               <div className="absolute inset-0 overflow-hidden rounded-full [clip-path:circle(50%)]">
-              <Image
-                src="/optimizado/revista/pagina-0.webp"
-                alt="Ilustración de la portada del libro"
-                fill
-                sizes="256px"
-                className="origin-[50%_74%] scale-[1.9] object-cover object-[50%_74%]"
-                preload
-              />
+                <Image
+                  src="/optimizado/revista/pagina-0.webp"
+                  alt="Ilustración de la portada del libro"
+                  fill
+                  sizes="256px"
+                  className="origin-[50%_74%] scale-[1.9] object-cover object-[50%_74%]"
+                  preload
+                />
               </div>
             </div>
             <span className="absolute -right-2 -bottom-1 text-4xl">💛</span>
@@ -58,7 +58,7 @@ export default function Portada() {
           href="#libro"
           className="mt-12 flex flex-col items-center text-white drop-shadow transition hover:scale-105"
         >
-          <span className="text-xs font-bold tracking-[0.3em] uppercase">Empieza nuestra historia</span>
+          <span className="text-xs font-bold tracking-[0.3em] uppercase">Nuestra historia</span>
           <span className="mt-2 animate-bounce text-2xl">↓</span>
         </a>
       </div>

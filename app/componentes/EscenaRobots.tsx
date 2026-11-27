@@ -119,7 +119,7 @@ export default function EscenaRobots() {
 
       <TituloSeccion
         claro
-        antetitulo="Como en nuestra película favorita"
+        antetitulo="Como en nuestras peliculas"
         titulo="Dos robots en un mundo enorme"
         subtitulo="Él guardaba una plantita esperando a alguien con quien compartirla. Un día bajó del cielo la robot más bonita del universo."
       />

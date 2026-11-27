@@ -377,10 +377,11 @@ export default function Libro() {
     setVersion((v) => v + 1);
   }, []);
 
+  // Solo en pantallas táctiles (celular / tablet): en computador el libro ya se ve grande.
   const botonAmpliar = (
     <button
       onClick={() => setAmpliado(true)}
-      className="mt-5 flex items-center gap-2 rounded-full bg-white px-4 py-2 text-sm font-bold text-vino shadow-md transition hover:scale-105"
+      className="mt-5 hidden items-center pointer-coarse:flex gap-2 rounded-full bg-white px-4 py-2 text-sm font-bold text-vino shadow-md transition hover:scale-105"
     >
       <svg viewBox="0 0 24 24" className="h-4 w-4 fill-none stroke-current stroke-2" aria-hidden>
         <path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" />
