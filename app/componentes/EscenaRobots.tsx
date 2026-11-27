@@ -3,6 +3,7 @@
 import { AnimatePresence, motion } from "framer-motion";
 import { useState } from "react";
 import Corazon from "./Corazon";
+import Estrellas from "./Estrellas";
 import TituloSeccion from "./TituloSeccion";
 
 // Dos robots originales: él, cuadradito y oxidado, que cuida una plantita;
@@ -113,17 +114,7 @@ export default function EscenaRobots() {
 
   return (
     <section className="relative overflow-hidden bg-gradient-to-b from-[#2c2350] via-[#6b3f6e] to-[#f08a5d] px-4 py-24 text-white">
-      {Array.from({ length: 30 }, (_, i) => (
-        <span
-          key={i}
-          className="absolute h-[3px] w-[3px] rounded-full bg-white"
-          style={{
-            top: `${(i * 17) % 55}%`,
-            left: `${(i * 31 + 3) % 100}%`,
-            animation: `titilar ${2 + (i % 5)}s ease-in-out ${i * 0.2}s infinite`,
-          }}
-        />
-      ))}
+      <Estrellas cantidad={30} alto={55} pasoArriba={17} pasoIzquierda={31} desfase={3} tam="h-[3px] w-[3px]" />
 
       <TituloSeccion
         claro

@@ -21,7 +21,7 @@ export default function Galeria() {
         {viaje.fotos.map((f, i) => (
           <motion.div
             key={f.src}
-            className="mb-4 break-inside-avoid [backface-visibility:hidden]"
+            className="mb-4 break-inside-avoid"
             initial={{ opacity: 0, y: 30, scale: 0.95, rotate: i % 2 ? 1.5 : -1.5 }}
             whileInView={{ opacity: 1, y: 0, scale: 1, rotate: 0 }}
             viewport={{ once: true, margin: "-60px" }}

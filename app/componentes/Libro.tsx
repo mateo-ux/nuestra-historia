@@ -50,9 +50,6 @@ function tituloVista(v: Vista) {
   return a ?? b ?? "";
 }
 
-// Celular: una hoja a la vez. Computador: libro abierto.
-const useEsAncho = () => useMediaQuery("(min-width: 768px)", true);
-
 function Hoja({ pagina, prioridad }: { pagina: Pagina | null; prioridad?: boolean }) {
   if (!pagina) return null;
   return (
@@ -61,7 +58,7 @@ function Hoja({ pagina, prioridad }: { pagina: Pagina | null; prioridad?: boolea
       alt={esBlanca(pagina) ? "" : pagina.titulo}
       fill
       preload={prioridad}
-      sizes="(max-width: 1200px) 45vw, 520px"
+      sizes="(max-width: 767px) 90vw, (max-width: 1200px) 45vw, 520px"
       className="pointer-events-none object-fill select-none"
       draggable={false}
     />
@@ -70,19 +67,37 @@ function Hoja({ pagina, prioridad }: { pagina: Pagina | null; prioridad?: boolea
 
 const DURACION = 0.9;
 
-function LibroAbierto() {
-  const [actual, setActual] = useState(0);
+type PropsLibro = {
+  /** Vista con la que abre (para que "Ampliar" siga en la misma página). */
+  inicial?: number;
+  onCambio?: (vista: number) => void;
+  /** Tamaño del libro (ancho CSS); el alto sale de la proporción. */
+  ancho: string;
+  /** El libro está girado 90° (pantalla completa con el celular vertical). */
+  girado?: boolean;
+  /** Escuchar las flechas del teclado. */
+  teclado?: boolean;
+  /** Controles reducidos para pantalla completa. */
+  compacto?: boolean;
+  /** Algo extra junto a los controles (por ejemplo, el botón Ampliar). */
+  extra?: React.ReactNode;
+};
+
+function LibroAbierto({ inicial = 0, onCambio, ancho, girado = false, teclado = true, compacto = false, extra }: PropsLibro) {
+  const [actual, setActual] = useState(inicial);
   const [giro, setGiro] = useState<{ hacia: number; dir: 1 | -1 } | null>(null);
 
   const ir = useCallback(
     (destino: number) => {
       if (giro || destino === actual || destino < 0 || destino >= vistas.length) return;
       setGiro({ hacia: destino, dir: destino > actual ? 1 : -1 });
+      onCambio?.(destino);
     },
-    [giro, actual],
+    [giro, actual, onCambio],
   );
 
   useEffect(() => {
+    if (!teclado) return;
     const tecla = (e: KeyboardEvent) => {
       const libroEl = document.getElementById("libro");
       if (!libroEl) return;
@@ -93,7 +108,7 @@ function LibroAbierto() {
     };
     window.addEventListener("keydown", tecla);
     return () => window.removeEventListener("keydown", tecla);
-  }, [ir, actual]);
+  }, [ir, actual, teclado]);
 
   const desde = vistas[actual];
   const hacia = giro ? vistas[giro.hacia] : desde;
@@ -113,13 +128,21 @@ function LibroAbierto() {
 
   return (
     <div className="flex w-full flex-col items-center">
-      <div className="flex w-full justify-center overflow-hidden py-6">
+      <div className={`flex w-full justify-center overflow-hidden ${compacto ? "py-2" : "py-6"}`}>
         <motion.div
-          className="relative [perspective:2400px]"
-          style={{ width: "min(100%, calc(min(62vh, 640px) * 1.54))", aspectRatio: "1.54 / 1" }}
+          className="relative touch-pan-y [perspective:2400px]"
+          style={{ width: ancho, aspectRatio: "1.54 / 1" }}
           animate={{ x: corrimiento(hacia) }}
           initial={false}
           transition={{ duration: DURACION, ease: [0.4, 0, 0.2, 1] }}
+          // Deslizar con el dedo pasa la hoja (si el libro está girado, el
+          // "horizontal" del libro es el vertical de la pantalla).
+          onPanEnd={(_, info) => {
+            const d = girado ? info.offset.y : info.offset.x;
+            const otro = girado ? info.offset.x : info.offset.y;
+            if (Math.abs(d) < 40 || Math.abs(d) < Math.abs(otro)) return;
+            ir(actual + (d < 0 ? 1 : -1));
+          }}
         >
           {/* Hojas quietas */}
           {(["izq", "der"] as const).map((lado) => (
@@ -131,7 +154,7 @@ function LibroAbierto() {
               <Hoja pagina={base[lado]} prioridad={actual === 0} />
               {base[lado] && (
                 <div
-                  className={`pointer-events-none absolute inset-y-0 w-10 ${lado === "izq" ? "right-0 bg-gradient-to-l" : "left-0 bg-gradient-to-r"} from-black/20 to-transparent`}
+                  className={`pointer-events-none absolute inset-y-0 w-[8%] ${lado === "izq" ? "right-0 bg-gradient-to-l" : "left-0 bg-gradient-to-r"} from-black/20 to-transparent`}
                 />
               )}
             </div>
@@ -180,70 +203,68 @@ function LibroAbierto() {
         titulo={tituloVista(hacia)}
         posicion={giro ? giro.hacia : actual}
         total={vistas.length}
-        texto="toca una hoja o usa las flechas para pasarla"
+        texto={compacto ? "toca o desliza una hoja" : "toca o desliza una hoja para pasarla"}
         alIr={ir}
+        compacto={compacto}
+        extra={extra}
       />
     </div>
   );
 }
 
-function LibroCelular() {
-  const [[indice, dir], setPagina] = useState<[number, number]>([0, 0]);
-  const pagina = libro[indice];
+// Celular con la pantalla vertical: en pantalla completa el libro se gira 90°
+// para aprovechar lo largo de la pantalla (como si giraras el celular).
+const useVertical = () => useMediaQuery("(orientation: portrait)");
 
-  const ir = useCallback((destino: number) => {
-    setPagina(([i]) => {
-      const n = Math.min(libro.length - 1, Math.max(0, destino));
-      return [n, n > i ? 1 : -1];
-    });
-  }, []);
+function LibroPantallaCompleta({ inicial, onCambio, onCerrar }: { inicial: number; onCambio: (v: number) => void; onCerrar: () => void }) {
+  const vertical = useVertical();
+
+  // Mientras está abierto, la página de atrás no se mueve y Esc lo cierra.
+  useEffect(() => {
+    const frenar = (e: Event) => e.preventDefault();
+    const tecla = (e: KeyboardEvent) => e.key === "Escape" && onCerrar();
+    window.addEventListener("wheel", frenar, { passive: false });
+    window.addEventListener("keydown", tecla);
+    return () => {
+      window.removeEventListener("wheel", frenar);
+      window.removeEventListener("keydown", tecla);
+    };
+  }, [onCerrar]);
+
+  // Espacio útil (en el sistema del libro): ancho y alto disponibles.
+  const anchoUtil = vertical ? "100svh" : "100vw";
+  const altoUtil = vertical ? "100vw" : "100svh";
+  const ancho = `min(calc(${anchoUtil} - 2rem), calc((${altoUtil} - 4.5rem) * 1.54))`;
 
   return (
-    <div className="flex w-full flex-col items-center">
-      <div className="relative flex h-[62vh] max-h-[640px] min-h-[300px] w-full items-center justify-center [perspective:1600px]">
-        <AnimatePresence initial={false} custom={dir} mode="popLayout">
-          <motion.div
-            key={indice}
-            custom={dir}
-            className="relative h-full cursor-grab active:cursor-grabbing"
-            style={{ aspectRatio: `${pagina.ancho} / ${pagina.alto}`, maxWidth: "100%", transformOrigin: dir >= 0 ? "left center" : "right center" }}
-            variants={{
-              entra: (d: number) => ({ rotateY: d > 0 ? 70 : d < 0 ? -70 : 0, opacity: 0, x: d * 40 }),
-              centro: { rotateY: 0, opacity: 1, x: 0 },
-              sale: (d: number) => ({ rotateY: d > 0 ? -80 : 80, opacity: 0, x: -d * 40 }),
-            }}
-            initial="entra"
-            animate="centro"
-            exit="sale"
-            transition={{ duration: 0.7, ease: [0.4, 0, 0.2, 1] }}
-            drag="x"
-            dragConstraints={{ left: 0, right: 0 }}
-            dragElastic={0.3}
-            onDragEnd={(_, info) => {
-              if (info.offset.x < -60) ir(indice + 1);
-              else if (info.offset.x > 60) ir(indice - 1);
-            }}
-          >
-            <Image
-              src={pagina.src}
-              alt={pagina.titulo}
-              fill
-              sizes="100vw"
-              className="pointer-events-none rounded-lg object-contain shadow-[0_25px_60px_-15px_rgba(120,50,40,0.45)]"
-              draggable={false}
-            />
-          </motion.div>
-        </AnimatePresence>
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.3 }}
+      className="fixed inset-0 z-[70] touch-none overflow-hidden overscroll-none bg-[#2a1a22]"
+      role="dialog"
+      aria-modal="true"
+      aria-label="Nuestro libro en pantalla completa"
+    >
+      <div
+        className="absolute top-1/2 left-1/2 flex flex-col items-center justify-center"
+        style={{
+          width: anchoUtil,
+          height: altoUtil,
+          transform: `translate(-50%, -50%) ${vertical ? "rotate(90deg)" : ""}`,
+        }}
+      >
+        <button
+          onClick={onCerrar}
+          className="absolute top-3 right-3 z-30 grid h-10 w-10 place-items-center rounded-full bg-white/90 text-lg text-vino shadow-md transition hover:scale-110"
+          aria-label="Cerrar libro"
+        >
+          ✕
+        </button>
+        <LibroAbierto inicial={inicial} onCambio={onCambio} ancho={ancho} girado={vertical} teclado compacto />
       </div>
-
-      <Controles
-        titulo={pagina.titulo}
-        posicion={indice}
-        total={libro.length}
-        texto="desliza o usa las flechas"
-        alIr={ir}
-      />
-    </div>
+    </motion.div>
   );
 }
 
@@ -253,56 +274,88 @@ function Controles({
   total,
   texto,
   alIr,
+  compacto = false,
+  extra,
 }: {
   titulo: string;
   posicion: number;
   total: number;
   texto: string;
   alIr: (destino: number) => void;
+  compacto?: boolean;
+  extra?: React.ReactNode;
 }) {
   return (
     <>
-      <div className="mt-8 flex w-full max-w-md items-center justify-between gap-2 sm:w-auto sm:max-w-none sm:justify-center sm:gap-4">
+      <div className={`${compacto ? "mt-2" : "mt-8"} flex w-full max-w-md items-center justify-between gap-2 sm:w-auto sm:max-w-none sm:justify-center sm:gap-4`}>
         <button
           onClick={() => alIr(posicion - 1)}
           disabled={posicion === 0}
-          className="grid h-12 w-12 shrink-0 place-items-center rounded-full bg-white text-2xl text-vino shadow-md transition enabled:hover:scale-110 disabled:opacity-30"
+          className={`grid shrink-0 place-items-center rounded-full bg-white text-vino shadow-md transition enabled:hover:scale-110 disabled:opacity-30 ${compacto ? "h-9 w-9 text-xl" : "h-12 w-12 text-2xl"}`}
           aria-label="Página anterior"
         >
           ‹
         </button>
         <div className="min-w-0 flex-1 text-center sm:min-w-[200px] sm:flex-none">
-          <p className="texto-libro text-lg text-vino">{titulo}</p>
-          <p className="text-xs text-tinta/80">
-            {posicion + 1} de {total} · {texto}
+          <p className={`texto-libro ${compacto ? "text-base text-[#ffd6a8]" : "text-lg text-vino"}`}>
+            {titulo}
+            {compacto && <span className="ml-2 font-sans text-xs text-white/60">{posicion + 1} de {total}</span>}
           </p>
+          {!compacto && (
+            <p className="text-xs text-tinta/80">
+              {posicion + 1} de {total} · {texto}
+            </p>
+          )}
         </div>
         <button
           onClick={() => alIr(posicion + 1)}
           disabled={posicion === total - 1}
-          className="grid h-12 w-12 shrink-0 place-items-center rounded-full bg-white text-2xl text-vino shadow-md transition enabled:hover:scale-110 disabled:opacity-30"
+          className={`grid shrink-0 place-items-center rounded-full bg-white text-vino shadow-md transition enabled:hover:scale-110 disabled:opacity-30 ${compacto ? "h-9 w-9 text-xl" : "h-12 w-12 text-2xl"}`}
           aria-label="Página siguiente"
         >
           ›
         </button>
       </div>
 
-      <div className="mt-5 flex flex-wrap justify-center gap-1.5">
-        {Array.from({ length: total }, (_, i) => (
-          <button
-            key={i}
-            onClick={() => alIr(i)}
-            aria-label={`Ir a la ${i + 1}`}
-            className={`h-2.5 rounded-full transition-all ${i === posicion ? "w-7 bg-atardecer" : "w-2.5 bg-rosa"}`}
-          />
-        ))}
-      </div>
+      {extra}
+      {!compacto && (
+        <div className="mt-5 flex flex-wrap justify-center gap-1.5">
+          {Array.from({ length: total }, (_, i) => (
+            <button
+              key={i}
+              onClick={() => alIr(i)}
+              aria-label={`Ir a la ${i + 1}`}
+              className={`h-2.5 rounded-full transition-all ${i === posicion ? "w-7 bg-atardecer" : "w-2.5 bg-rosa"}`}
+            />
+          ))}
+        </div>
+      )}
     </>
   );
 }
 
 export default function Libro() {
-  const esAncho = useEsAncho();
+  const esAncho = useMediaQuery("(min-width: 768px)", true);
+  const [ampliado, setAmpliado] = useState(false);
+  const [vista, setVista] = useState(0);
+  // Cambia la "llave" del libro al cerrar la pantalla completa para que quede en la misma página.
+  const [version, setVersion] = useState(0);
+  const cerrar = useCallback(() => {
+    setAmpliado(false);
+    setVersion((v) => v + 1);
+  }, []);
+
+  const botonAmpliar = (
+    <button
+      onClick={() => setAmpliado(true)}
+      className="mt-5 flex items-center gap-2 rounded-full bg-white px-4 py-2 text-sm font-bold text-vino shadow-md transition hover:scale-105"
+    >
+      <svg viewBox="0 0 24 24" className="h-4 w-4 fill-none stroke-current stroke-2" aria-hidden>
+        <path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" />
+      </svg>
+      {esAncho ? "Ver en grande" : "Ver en grande (gira el celular)"}
+    </button>
+  );
 
   return (
     <section id="libro" className="fondo-papel relative px-4 py-24">
@@ -313,9 +366,19 @@ export default function Libro() {
       />
 
       <div className="mx-auto flex max-w-5xl flex-col items-center">
-        {esAncho ? <LibroAbierto /> : <LibroCelular />}
+        <LibroAbierto
+          key={version}
+          inicial={vista}
+          onCambio={setVista}
+          ancho="min(100%, calc(min(62vh, 640px) * 1.54))"
+          teclado={!ampliado}
+          extra={botonAmpliar}
+        />
       </div>
 
+      <AnimatePresence>
+        {ampliado && <LibroPantallaCompleta inicial={vista} onCambio={setVista} onCerrar={cerrar} />}
+      </AnimatePresence>
     </section>
   );
 }

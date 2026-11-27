@@ -76,6 +76,15 @@ body {
   50% { opacity: 1; }
 }
 
+/* Secciones fuera de pantalla: sus animaciones CSS en bucle se QUITAN (no solo
+   se pausan). Una animación pausada igual ocupa una capa en la tarjeta gráfica;
+   con ~90 capas el celular se queda sin memoria y parpadea. Ver usePausarFueraDeVista. */
+[data-fuera-de-vista] *,
+[data-fuera-de-vista] *::before,
+[data-fuera-de-vista] *::after {
+  animation: none !important;
+}
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: 0.01ms !important;

@@ -2,6 +2,7 @@ import Image from "next/image";
 import { pareja } from "@/datos/contenido";
 import Contador from "./Contador";
 import CorazonesFlotantes from "./CorazonesFlotantes";
+import Estrellas from "./Estrellas";
 import LunaSecreta from "./LunaSecreta";
 import Revelar from "./Revelar";
 
@@ -9,22 +10,13 @@ export default function Portada() {
   return (
     <section className="relative flex min-h-[100svh] flex-col items-center justify-center overflow-hidden bg-gradient-to-b from-[#e47f52] via-[#d4603e] to-[#a8414c] px-4 pt-32 pb-16 sm:pt-20">
       {/* estrellitas */}
-      {Array.from({ length: 18 }, (_, i) => (
-        <span
-          key={i}
-          className="absolute h-1 w-1 rounded-full bg-white"
-          style={{
-            top: `${(i * 13) % 45}%`,
-            left: `${(i * 29 + 7) % 100}%`,
-            animation: `titilar ${2 + (i % 4)}s ease-in-out ${i * 0.3}s infinite`,
-          }}
-        />
-      ))}
+      <Estrellas cantidad={18} alto={45} pasoArriba={13} pasoIzquierda={29} desfase={7} />
       <LunaSecreta />
       <CorazonesFlotantes cantidad={16} color="rgba(255,255,255,0.7)" />
 
       {/* sol poniéndose */}
-      <div className="pointer-events-none absolute bottom-[-180px] left-1/2 h-[360px] w-[360px] -translate-x-1/2 rounded-full bg-[#ffd27a]/50 blur-2xl" />
+      {/* (degradado en vez de blur: el filtro blur grande hace parpadear el celular) */}
+      <div className="pointer-events-none absolute bottom-[-180px] left-1/2 h-[360px] w-[360px] -translate-x-1/2 rounded-full bg-[radial-gradient(circle,rgba(255,210,122,0.55)_0%,rgba(255,210,122,0.25)_45%,transparent_70%)]" />
 
       <div className="relative z-10 flex w-full max-w-4xl flex-col items-center">
         <Revelar>

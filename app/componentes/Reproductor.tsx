@@ -39,6 +39,9 @@ export function aUri(url: string): string | null {
   return null;
 }
 
+// Para buscar sin importar mayúsculas ni tildes ("corazon" encuentra "Corazón").
+const sinTildes = (t: string) => t.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+
 export default function Reproductor() {
   const [abierto, setAbierto] = useState(false);
   const { canciones: agregadas, agregar: guardarCancion, quitar, guardarLetra, compartido, error } = useCancionesCompartidas();
@@ -52,6 +55,9 @@ export default function Reproductor() {
   // El formulario se puede esconder para que la lista ocupe toda la tarjeta.
   const [formAbierto, setFormAbierto] = useState(false);
   const [letraAbierta, setLetraAbierta] = useState(false);
+  const [busqueda, setBusqueda] = useState("");
+  // Canción que espera confirmación antes de eliminarse.
+  const [porBorrar, setPorBorrar] = useState<string | null>(null);
   // Segundo de la canción que está sonando (lo informa Spotify), para la letra sincronizada.
   const [posicion, setPosicion] = useState(0);
   const [copiado, setCopiado] = useState<string | null>(null);
@@ -326,7 +332,13 @@ export default function Reproductor() {
       <motion.div
         ref={panel}
         initial={false}
-        animate={abierto ? { opacity: 1, y: 0, pointerEvents: "auto" } : { opacity: 0, y: 30, pointerEvents: "none" }}
+        // Cerrado queda "invisible": la música sigue, pero el navegador no lo pinta
+        // encima de la página al desplazarse (evita parpadeos en celular).
+        animate={
+          abierto
+            ? { opacity: 1, y: 0, pointerEvents: "auto", visibility: "visible" }
+            : { opacity: 0, y: 30, pointerEvents: "none", transitionEnd: { visibility: "hidden" } }
+        }
         transition={{ type: "spring", stiffness: 260, damping: 26 }}
         className="fixed right-3 bottom-18 z-40 flex max-h-[calc(100svh-7rem)] w-[calc(100vw-1.5rem)] max-w-sm sm:right-4 sm:bottom-20 flex-col overflow-hidden rounded-3xl bg-[#2a1a22] text-white shadow-2xl ring-1 ring-white/10"
         aria-hidden={!abierto}
@@ -371,8 +383,25 @@ export default function Reproductor() {
           )}
         </div>
 
+        {lista.length > 3 && (
+          <div className="relative mx-4 mt-3">
+            <svg viewBox="0 0 24 24" className="pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 fill-none stroke-white/50 stroke-2" aria-hidden>
+              <circle cx="11" cy="11" r="7" />
+              <path d="m20 20-3.5-3.5" />
+            </svg>
+            <input
+              type="search"
+              value={busqueda}
+              onChange={(e) => setBusqueda(e.target.value)}
+              placeholder="Buscar canción…"
+              aria-label="Buscar canción por título"
+              className="w-full rounded-full bg-white/10 py-2 pr-3 pl-9 text-sm placeholder:text-white/50 focus:ring-2 focus:ring-[#ffd6a8] focus:outline-none"
+            />
+          </div>
+        )}
+
         <ol className="barra-bonita mt-3 flex-1 space-y-1 overflow-y-auto px-3 pb-2">
-          {musica.archivo && bienvenida.hay && (
+          {musica.archivo && bienvenida.hay && (!busqueda || sinTildes(musica.titulo).includes(sinTildes(busqueda))) && (
             <li>
               <button
                 onClick={() => window.dispatchEvent(new Event("alternar-bienvenida"))}
@@ -391,6 +420,34 @@ export default function Reproductor() {
           {lista.map((c, i) => {
             const uri = aUri(c.url)!;
             const activa = uri === actual;
+            const nombre = c.titulo || titulos[c.url] || `Canción ${i + 1}`;
+            if (busqueda && !sinTildes(`${nombre} ${c.de ?? ""}`).includes(sinTildes(busqueda))) return null;
+            if (c.id && porBorrar === c.id) {
+              return (
+                <li key={`${c.url}-${i}`} className="rounded-xl bg-[#8e3b46]/60 ring-1 ring-[#ffd6a8]/40">
+                  <div className="flex items-center gap-2 px-3 py-2.5">
+                    <p className="min-w-0 flex-1 text-sm">
+                      ¿Eliminar <span className="font-semibold">“{nombre}”</span>?{compartido && " Se borra para los dos."}
+                    </p>
+                    <button
+                      onClick={() => setPorBorrar(null)}
+                      className="shrink-0 rounded-full bg-white/15 px-3 py-1 text-xs font-bold transition hover:bg-white/25"
+                    >
+                      No
+                    </button>
+                    <button
+                      onClick={() => {
+                        setPorBorrar(null);
+                        quitar(c.id!);
+                      }}
+                      className="shrink-0 rounded-full bg-[#ffd6a8] px-3 py-1 text-xs font-bold text-vino transition hover:brightness-95"
+                    >
+                      Sí, eliminar
+                    </button>
+                  </div>
+                </li>
+              );
+            }
             return (
               <li key={`${c.url}-${i}`} className={`rounded-xl ${activa ? "bg-white/15" : ""}`}>
                 <div className="flex items-center gap-3 px-3 py-2">
@@ -402,7 +459,7 @@ export default function Reproductor() {
                     {activa && sonando ? "❚❚" : "▶"}
                   </button>
                   <button onClick={() => reproducir(uri)} className="min-w-0 flex-1 text-left">
-                    <span className="block truncate font-semibold">{c.titulo || titulos[c.url] || `Canción ${i + 1}`}</span>
+                    <span className="block truncate font-semibold">{nombre}</span>
                     {c.de && <span className="block truncate text-xs text-white/75">💌 {c.de}</span>}
                     {c.nota && <span className="block truncate text-xs text-white/60 italic">{c.nota}</span>}
                   </button>
@@ -423,7 +480,8 @@ export default function Reproductor() {
                       )}
                       <button
                         title="Quitar"
-                        onClick={() => c.id && quitar(c.id)}
+                        aria-label={`Eliminar ${nombre}`}
+                        onClick={() => c.id && setPorBorrar(c.id)}
                         className="rounded-full px-2 py-1 text-xs text-white/70 hover:bg-white/10"
                       >
                         ✕
@@ -434,6 +492,9 @@ export default function Reproductor() {
               </li>
             );
           })}
+          {busqueda && lista.every((c, i) => !sinTildes(`${c.titulo || titulos[c.url] || `Canción ${i + 1}`} ${c.de ?? ""}`).includes(sinTildes(busqueda))) && (
+            <li className="px-3 py-2 text-sm text-white/75">No encontré canciones con “{busqueda}”.</li>
+          )}
           {lista.length === 0 && (
             <li className="px-3 py-2 text-sm text-white/75">Todavía no hay canciones. ¡Agrega la primera aquí abajo!</li>
           )}

@@ -5,7 +5,7 @@ import { useEffect } from "react";
 const esInfinita = (a: Animation) => a.effect?.getTiming().iterations === Infinity;
 
 /**
- * Pausa las animaciones que se repiten sin fin (corazones, estrellas, robots…)
+ * Quita / pausa las animaciones que se repiten sin fin (corazones, estrellas, robots…)
  * de las secciones que no se están viendo, y las reanuda al volver a ellas.
  * En celular, tener todas corriendo a la vez satura la tarjeta gráfica y
  * produce parpadeos al desplazarse.
@@ -16,13 +16,13 @@ export function usePausarFueraDeVista() {
     const secciones = Array.from(document.querySelectorAll<HTMLElement>("main > section, main section[id]"));
 
     const aplicar = (el: HTMLElement, visible: boolean) => {
-      // CSS: las animaciones nuevas también nacen pausadas (ver globals.css).
+      // CSS: fuera de pantalla se quitan del todo (ver globals.css).
       if (visible) el.removeAttribute("data-fuera-de-vista");
       else el.setAttribute("data-fuera-de-vista", "");
-      // Animaciones ya creadas (CSS y framer-motion): solo las infinitas, para
-      // no reiniciar las que ya terminaron.
+      // Animaciones de framer-motion en bucle: se pausan. Solo las infinitas,
+      // para no reiniciar las que ya terminaron.
       for (const a of el.getAnimations({ subtree: true })) {
-        if (!esInfinita(a)) continue;
+        if (!esInfinita(a) || a instanceof CSSAnimation) continue;
         if (visible && a.playState === "paused") a.play();
         else if (!visible && a.playState === "running") a.pause();
       }

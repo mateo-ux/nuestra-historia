@@ -8,6 +8,9 @@ import Corazon from "./Corazon";
 // Sobre sellado al entrar + botón flotante de música.
 export default function Intro() {
   const [fase, setFase] = useState<"cerrado" | "abriendo" | "listo">("cerrado");
+  // Desde que se toca el sobre ya no vuelve a su estado inicial (antes, al pasar
+  // a "listo" durante el fundido de salida, el texto de ayuda reaparecía).
+  const abierto = fase !== "cerrado";
   const [hayMusica, setHayMusica] = useState(true);
   const [sonando, setSonando] = useState(false);
   const audio = useRef<HTMLAudioElement>(null);
@@ -106,7 +109,7 @@ export default function Intro() {
           >
             <motion.p
               className="titulo-mano mb-12 text-center text-3xl text-white drop-shadow sm:text-4xl"
-              animate={fase === "abriendo" ? { opacity: 0, y: -10 } : { opacity: 1, y: 0 }}
+              animate={abierto ? { opacity: 0, y: -10 } : { opacity: 1, y: 0 }}
               transition={{ duration: 0.4 }}
             >
               Para {pareja.ella}
@@ -116,16 +119,23 @@ export default function Intro() {
               onClick={abrir}
               aria-label="Abrir el sobre"
               className="relative h-[200px] w-[300px] cursor-pointer [perspective:900px] sm:h-[230px] sm:w-[340px]"
-              animate={fase === "abriendo" ? { y: 60 } : { y: 0 }}
+              animate={abierto ? { y: 60 } : { y: 0 }}
               transition={{ duration: 0.8, ease: "easeInOut" }}
             >
+              {/* sombra aparte y un poco más adentro: si la lleva el fondo, en el
+                  celular se ve una línea oscura en los bordes y esquinas */}
+              <div
+                className="absolute inset-[3px] rounded-lg shadow-[0_25px_50px_-12px_rgba(90,30,30,0.45)]"
+                style={{ zIndex: 0 }}
+                aria-hidden
+              />
               {/* fondo interior del sobre */}
-              <div className="absolute inset-0 rounded-lg bg-[#f3c7ae] shadow-2xl" style={{ zIndex: 0 }} />
+              <div className="absolute inset-0 rounded-lg bg-[#f3c7ae]" style={{ zIndex: 0 }} />
               {/* carta que sale */}
               <motion.div
                 className="absolute inset-x-4 top-3 bottom-3 flex flex-col items-center justify-start rounded-md bg-crema p-4 pt-5 text-center shadow"
                 style={{ zIndex: 1 }}
-                animate={fase === "abriendo" ? { y: -130 } : { y: 0 }}
+                animate={abierto ? { y: -130 } : { y: 0 }}
                 transition={{ delay: 0.6, duration: 1, ease: "easeOut" }}
               >
                 <span className="titulo-mano text-2xl text-vino">Siempre fuiste tú</span>
@@ -145,8 +155,8 @@ export default function Intro() {
               {/* solapa de arriba */}
               <motion.div
                 className="absolute inset-x-0 top-0 h-[60%] origin-top overflow-hidden rounded-t-lg drop-shadow-[0_3px_4px_rgba(120,50,40,0.18)]"
-                style={{ zIndex: fase === "abriendo" ? 0 : 3 }}
-                animate={fase === "abriendo" ? { rotateX: 180 } : { rotateX: 0 }}
+                style={{ zIndex: abierto ? 0 : 3 }}
+                animate={abierto ? { rotateX: 180 } : { rotateX: 0 }}
                 transition={{ duration: 0.6 }}
               >
                 <div className="absolute inset-0 bg-[#f9c6ad]" style={{ clipPath: "polygon(0 0, 100% 0, 50% 100%)" }} />
@@ -155,21 +165,30 @@ export default function Intro() {
               <motion.div
                 className="absolute top-[56%] left-1/2 grid h-14 w-14 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full bg-vino shadow-lg"
                 style={{ zIndex: 4 }}
-                animate={fase === "abriendo" ? { scale: 0, opacity: 0 } : { scale: [1, 1.08, 1] }}
-                transition={fase === "abriendo" ? { duration: 0.3 } : { repeat: Infinity, duration: 1.6 }}
+                animate={abierto ? { scale: 0, opacity: 0 } : { scale: [1, 1.08, 1] }}
+                transition={abierto ? { duration: 0.3 } : { repeat: Infinity, duration: 1.6 }}
               >
                 <Corazon className="h-7 w-7 text-[#ffd6c9]" />
               </motion.div>
             </motion.button>
 
-            <motion.p
-              className="mt-10 text-sm font-semibold tracking-widest text-white uppercase"
-              animate={fase === "abriendo" ? { opacity: 0 } : { opacity: [0.4, 1, 0.4] }}
-              transition={{ repeat: Infinity, duration: 2 }}
+            {/* Al tocar el sobre, las instrucciones se apagan al instante (antes la
+                animación en bucle seguía y se veían debajo del sobre que baja). Se
+                mantienen en su sitio para que el sobre no salte. */}
+            <motion.div
+              className="flex flex-col items-center"
+              animate={{ opacity: abierto ? 0 : 1 }}
+              transition={{ duration: 0.15 }}
             >
-              Toca el sobre para abrirlo
-            </motion.p>
-            {hayMusica && <p className="mt-2 text-xs text-white/90">(sube el volumen 🎶)</p>}
+              <motion.p
+                className="mt-10 text-sm font-semibold tracking-widest text-white uppercase"
+                animate={abierto ? { opacity: 0 } : { opacity: [0.4, 1, 0.4] }}
+                transition={abierto ? { duration: 0.15 } : { repeat: Infinity, duration: 2 }}
+              >
+                Toca el sobre para abrirlo
+              </motion.p>
+              {hayMusica && <p className="mt-2 text-xs text-white/90">(sube el volumen 🎶)</p>}
+            </motion.div>
           </motion.div>
         )}
       </AnimatePresence>
