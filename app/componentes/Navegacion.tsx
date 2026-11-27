@@ -1,6 +1,7 @@
 "use client";
 
 import { AnimatePresence, motion } from "framer-motion";
+import { animarEnJs } from "@/lib/aparecer";
 import { useEffect, useState } from "react";
 import Corazon from "./Corazon";
 
@@ -65,6 +66,7 @@ export default function Navegacion() {
         <AnimatePresence>
           {abierto && (
             <motion.div
+              onUpdate={animarEnJs}
               key="fondo"
               className="fixed inset-0 z-40 bg-[#4a2c2a]/30"
               initial={{ opacity: 0 }}
@@ -97,6 +99,7 @@ export default function Navegacion() {
         <AnimatePresence>
           {abierto && (
             <motion.nav
+              onUpdate={animarEnJs}
               id="menu-celular"
               key="menu"
               aria-label="Secciones"
@@ -110,7 +113,7 @@ export default function Navegacion() {
               <p className="titulo-mano px-3 pt-1 pb-2 text-2xl text-vino">Ir a…</p>
               <ul className="grid grid-cols-2 gap-2">
                 {enlaces.map((e, i) => (
-                  <motion.li key={e.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.04 * i }}>
+                  <motion.li onUpdate={animarEnJs} key={e.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.04 * i }}>
                     <a
                       href={`#${e.id}`}
                       onClick={() => setAbierto(false)}

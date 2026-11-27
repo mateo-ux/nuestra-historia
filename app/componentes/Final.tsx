@@ -1,6 +1,7 @@
 "use client";
 
 import { AnimatePresence, motion } from "framer-motion";
+import { animarEnJs } from "@/lib/aparecer";
 import Image from "next/image";
 import { useState } from "react";
 import { capituloDos, despues, pareja } from "@/datos/contenido";
@@ -88,6 +89,7 @@ export default function Final() {
       <AnimatePresence>
         {dijoSi && (
           <motion.div
+            onUpdate={animarEnJs}
             className="fixed inset-0 z-50 flex items-center justify-center bg-[#8e3b46]/70 p-6 backdrop-blur-sm"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}

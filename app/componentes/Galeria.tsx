@@ -1,9 +1,10 @@
 "use client";
 
 import Image from "next/image";
-import { motion } from "framer-motion";
 import { useState } from "react";
 import { viaje } from "@/datos/contenido";
+import { CURVA_SUAVE } from "@/lib/aparecer";
+import Aparecer from "./Aparecer";
 import Modal from "./Modal";
 import TituloSeccion from "./TituloSeccion";
 
@@ -19,13 +20,15 @@ export default function Galeria() {
 
       <div className="mx-auto max-w-6xl columns-2 gap-4 md:columns-3 lg:columns-4">
         {viaje.fotos.map((f, i) => (
-          <motion.div
+          <Aparecer
             key={f.src}
             className="mb-4 break-inside-avoid"
-            initial={{ opacity: 0, transform: `translateY(30px) scale(0.95) rotate(${i % 2 ? 1.5 : -1.5}deg)` }}
-            whileInView={{ opacity: 1, transform: "translateY(0px) scale(1) rotate(0deg)" }}
-            viewport={{ once: true, margin: "-60px" }}
-            transition={{ duration: 0.8, delay: (i % 4) * 0.08, ease: [0.22, 1, 0.36, 1] }}
+            margen="-60px"
+            desde={`translateY(30px) scale(0.95) rotate(${i % 2 ? 1.5 : -1.5}deg)`}
+            hasta="translateY(0px) scale(1) rotate(0deg)"
+            duracion={0.8}
+            curva={CURVA_SUAVE}
+            retraso={(i % 4) * 0.08}
           >
             <button
               onClick={() => setAbierta(i)}
@@ -45,7 +48,7 @@ export default function Galeria() {
                 </span>
               )}
             </button>
-          </motion.div>
+          </Aparecer>
         ))}
       </div>
 

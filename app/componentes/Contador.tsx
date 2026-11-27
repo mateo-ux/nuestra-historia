@@ -3,6 +3,8 @@
 import { AnimatePresence, motion } from "framer-motion";
 import { useEffect, useState } from "react";
 import { pareja } from "@/datos/contenido";
+import { animarEnJs, CURVA_NORMAL } from "@/lib/aparecer";
+import Aparecer from "./Aparecer";
 
 function sumarMeses(desde: Date, n: number) {
   const d = new Date(desde);
@@ -59,13 +61,14 @@ export default function Contador() {
         {piezas.map(([etiqueta, valor], i) => {
           const texto = valor === undefined ? "··" : String(valor).padStart(2, "0");
           return (
-            <motion.div
+            <Aparecer
               key={etiqueta}
               className="min-w-[78px] rounded-2xl bg-[#6e2433]/45 sm:bg-[#6e2433]/35 px-3 py-3 shadow-sm ring-1 ring-white/40 sm:backdrop-blur-md"
-              initial={{ opacity: 0, transform: "translateY(14px)" }}
-              whileInView={{ opacity: 1, transform: "translateY(0px)" }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.6, delay: 0.5 + i * 0.08 }}
+              desde="translateY(14px)"
+              hasta="translateY(0px)"
+              duracion={0.6}
+              curva={CURVA_NORMAL}
+              retraso={0.5 + i * 0.08}
             >
               {/* cada número cambia deslizándose suavemente */}
               <div className="relative h-9 overflow-hidden text-3xl leading-9 font-bold text-white tabular-nums sm:h-10 sm:text-4xl sm:leading-10">
@@ -77,13 +80,16 @@ export default function Contador() {
                     animate={{ y: 0, opacity: 1 }}
                     exit={{ y: "100%", opacity: 0 }}
                     transition={{ duration: 0.35, ease: "easeOut" }}
+                    // cambia cada segundo: se anima en JS para que en iPhone no
+                    // quede un cuadro en blanco al terminar (ver lib/aparecer.ts)
+                    onUpdate={animarEnJs}
                   >
                     {texto}
                   </motion.span>
                 </AnimatePresence>
               </div>
               <div className="text-[11px] font-semibold tracking-wider text-white uppercase">{etiqueta}</div>
-            </motion.div>
+            </Aparecer>
           );
         })}
       </div>

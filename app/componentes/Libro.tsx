@@ -1,7 +1,8 @@
 "use client";
 
 import { AnimatePresence, motion } from "framer-motion";
-import Image from "next/image";
+import { animarEnJs } from "@/lib/aparecer";
+import Image, { getImageProps } from "next/image";
 import { useCallback, useEffect, useState } from "react";
 import { libro } from "@/datos/contenido";
 import { useMediaQuery } from "@/lib/useMediaQuery";
@@ -50,6 +51,11 @@ function tituloVista(v: Vista) {
   return a ?? b ?? "";
 }
 
+const TAMANOS_HOJA = "(max-width: 767px) 90vw, (max-width: 1200px) 45vw, 520px";
+
+// decoding="sync": al pasar la hoja, la imagen nueva se pinta en el mismo cuadro.
+// Con "async" (lo normal en next/image) Safari mostraba la hoja en blanco un
+// instante mientras decodificaba.
 function Hoja({ pagina, prioridad }: { pagina: Pagina | null; prioridad?: boolean }) {
   if (!pagina) return null;
   return (
@@ -58,11 +64,30 @@ function Hoja({ pagina, prioridad }: { pagina: Pagina | null; prioridad?: boolea
       alt={esBlanca(pagina) ? "" : pagina.titulo}
       fill
       preload={prioridad}
-      sizes="(max-width: 767px) 90vw, (max-width: 1200px) 45vw, 520px"
+      decoding="sync"
+      sizes={TAMANOS_HOJA}
       className="pointer-events-none object-fill select-none"
       draggable={false}
     />
   );
+}
+
+// Deja listas (descargadas y decodificadas) las hojas de las vistas vecinas,
+// con la misma URL que pedirá next/image, para que nunca aparezcan en blanco.
+// Se guardan solo las últimas 8 para no llenar la memoria del celular.
+const precargadas = new Map<string, HTMLImageElement>();
+function precargarVista(v: Vista | undefined) {
+  for (const p of [v?.izq, v?.der]) {
+    if (!p || precargadas.has(p.src)) continue;
+    const { props } = getImageProps({ src: p.src, alt: "", fill: true, sizes: TAMANOS_HOJA });
+    const img = new window.Image();
+    img.sizes = props.sizes ?? "";
+    if (props.srcSet) img.srcset = props.srcSet;
+    img.src = props.src;
+    img.decode().catch(() => {});
+    precargadas.set(p.src, img);
+    if (precargadas.size > 8) precargadas.delete(precargadas.keys().next().value!);
+  }
 }
 
 const DURACION = 0.9;
@@ -109,6 +134,11 @@ function LibroAbierto({ inicial = 0, onCambio, ancho, girado = false, teclado = 
     window.addEventListener("keydown", tecla);
     return () => window.removeEventListener("keydown", tecla);
   }, [ir, actual, teclado]);
+
+  // La vista actual y las dos de cada lado quedan precargadas.
+  useEffect(() => {
+    for (const d of [1, -1, 2, -2]) precargarVista(vistas[actual + d]);
+  }, [actual]);
 
   const desde = vistas[actual];
   const hacia = giro ? vistas[giro.hacia] : desde;
@@ -177,6 +207,7 @@ function LibroAbierto({ inicial = 0, onCambio, ancho, girado = false, teclado = 
                 <Hoja pagina={frente} />
                 {frente && (
                   <motion.div
+                    onUpdate={animarEnJs}
                     className="pointer-events-none absolute inset-0 bg-black"
                     initial={{ opacity: 0 }}
                     animate={{ opacity: [0, 0.25, 0] }}
@@ -238,6 +269,7 @@ function LibroPantallaCompleta({ inicial, onCambio, onCerrar }: { inicial: numbe
 
   return (
     <motion.div
+      onUpdate={animarEnJs}
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}

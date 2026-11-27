@@ -85,6 +85,37 @@ body {
   animation: none !important;
 }
 
+/* Entradas al hacer scroll (ver lib/aparecer.ts). Se usan transiciones CSS y
+   no framer-motion porque en iPhone las animaciones de framer dejaban ver un
+   cuadro vacío justo al terminar. El estilo final queda fijo: nada que cancelar. */
+.aparecer {
+  opacity: var(--opacidad-desde, 0);
+  transform: var(--desde);
+}
+.aparecer[data-visto] {
+  opacity: 1;
+  transform: var(--hasta, none);
+  transition:
+    opacity var(--duracion) var(--curva) var(--retraso, 0s),
+    transform var(--duracion) var(--curva) var(--retraso, 0s);
+}
+/* Sobre de la entrada (Intro.tsx): el sello late y la ayuda titila. */
+@keyframes latido-sello {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.08); }
+}
+@keyframes pulso-ayuda {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 1; }
+}
+
+@media (hover: hover) {
+  .polaroid[data-visto]:hover {
+    transform: translateY(0px) rotate(0deg) scale(1.05);
+    transition-delay: 0s;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: 0.01ms !important;

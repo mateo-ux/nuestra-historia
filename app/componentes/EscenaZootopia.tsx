@@ -1,6 +1,7 @@
 "use client";
 
 import { AnimatePresence, motion } from "framer-motion";
+import { animarEnJs } from "@/lib/aparecer";
 import { useEffect, useRef, useState } from "react";
 import { personajes } from "@/datos/contenido";
 import Corazon from "./Corazon";
@@ -265,6 +266,7 @@ export default function EscenaZootopia() {
           <AnimatePresence>
             {grabacion && (
               <motion.div
+                onUpdate={animarEnJs}
                 className="mx-auto w-full max-w-md rounded-2xl bg-white p-4 text-center shadow-lg ring-1 ring-durazno"
                 initial={{ opacity: 0, scale: 0.8, y: 10 }}
                 animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -304,6 +306,7 @@ export default function EscenaZootopia() {
             <div className="pointer-events-none absolute inset-0">
               {[0, 1, 2, 3].map((i) => (
                 <motion.span
+                  onUpdate={animarEnJs}
                   key={i}
                   className="absolute text-[#ff7aa2]"
                   style={{ left: `${44 + i * 4}%`, top: "50%" }}
@@ -335,7 +338,7 @@ export default function EscenaZootopia() {
           </div>
           <AnimatePresence>
             {terminado && (
-              <motion.p className="mt-3 text-sm text-tinta/70" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.8 }}>
+              <motion.p onUpdate={animarEnJs} className="mt-3 text-sm text-tinta/70" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.8 }}>
                 …y eso fue lo más rápido que pude decírtelo. 🦥💛
               </motion.p>
             )}

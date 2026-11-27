@@ -1,6 +1,7 @@
 "use client";
 
 import { AnimatePresence, motion } from "framer-motion";
+import { animarEnJs } from "@/lib/aparecer";
 import { useEffect, type ReactNode } from "react";
 
 export default function Modal({
@@ -30,6 +31,7 @@ export default function Modal({
     <AnimatePresence>
       {abierto && (
         <motion.div
+          onUpdate={animarEnJs}
           className="fixed inset-0 z-50 flex items-center justify-center bg-[#3b1f1f]/60 p-4 backdrop-blur-sm"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
@@ -37,6 +39,7 @@ export default function Modal({
           onClick={alCerrar}
         >
           <motion.div
+            onUpdate={animarEnJs}
             role="dialog"
             aria-modal="true"
             className={`relative w-full ${ancho}`}

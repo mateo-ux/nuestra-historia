@@ -1,6 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
+import { animarEnJs } from "@/lib/aparecer";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { videos, type Video } from "@/datos/contenido";
 import TituloSeccion from "./TituloSeccion";
@@ -50,6 +51,7 @@ function Escena({
 
   return (
     <motion.div
+      onUpdate={animarEnJs}
       data-escena
       onClick={alSeleccionar}
       animate={{ scale: activo ? 1 : 0.86, opacity: activo ? 1 : 0.55 }}

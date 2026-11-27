@@ -1,8 +1,10 @@
 "use client";
 
-import { motion } from "framer-motion";
 import type { ReactNode } from "react";
+import { CURVA_SUAVE, estiloAparecer, useAparecer } from "@/lib/aparecer";
 
+// Sube y aparece la primera vez que entra en pantalla (transición CSS: en
+// iPhone no deja el cuadro vacío que dejaba framer-motion al terminar).
 export default function Revelar({
   children,
   retraso = 0,
@@ -12,17 +14,14 @@ export default function Revelar({
   retraso?: number;
   className?: string;
 }) {
+  const ref = useAparecer<HTMLDivElement>("-80px");
   return (
-    <motion.div
-      className={className}
-      // "transform" como texto (y no "y") para que el navegador anime en la
-      // tarjeta gráfica: se ve igual, pero no se traba ni parpadea en celular.
-      initial={{ opacity: 0, transform: "translateY(40px)" }}
-      whileInView={{ opacity: 1, transform: "translateY(0px)" }}
-      viewport={{ once: true, margin: "-80px" }}
-      transition={{ duration: 0.8, delay: retraso, ease: [0.22, 1, 0.36, 1] }}
+    <div
+      ref={ref}
+      className={`aparecer ${className ?? ""}`}
+      style={estiloAparecer({ desde: "translateY(40px)", duracion: 0.8, curva: CURVA_SUAVE, retraso })}
     >
       {children}
-    </motion.div>
+    </div>
   );
 }

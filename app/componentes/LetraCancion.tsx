@@ -1,6 +1,7 @@
 "use client";
 
 import { AnimatePresence, motion } from "framer-motion";
+import { animarEnJs } from "@/lib/aparecer";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { buscarLetraEnLinea } from "@/lib/useCancionesCompartidas";
 
@@ -92,6 +93,7 @@ export default function LetraCancion({ titulo, letra: letraGuardada, url, posici
 
   return (
     <motion.div
+      onUpdate={animarEnJs}
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: 16 }}
@@ -127,7 +129,7 @@ export default function LetraCancion({ titulo, letra: letraGuardada, url, posici
 
       <AnimatePresence mode="wait" initial={false}>
         {editando ? (
-          <motion.div key="editar" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="flex min-h-0 flex-1 flex-col gap-2 px-4 pb-4">
+          <motion.div onUpdate={animarEnJs} key="editar" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="flex min-h-0 flex-1 flex-col gap-2 px-4 pb-4">
             <textarea
               value={borrador}
               onChange={(e) => setBorrador(e.target.value)}
@@ -153,6 +155,7 @@ export default function LetraCancion({ titulo, letra: letraGuardada, url, posici
           </motion.div>
         ) : (
           <motion.div
+            onUpdate={animarEnJs}
             key="leer"
             ref={caja}
             initial={{ opacity: 0 }}

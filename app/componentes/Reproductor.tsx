@@ -4,7 +4,11 @@ import { AnimatePresence, motion } from "framer-motion";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { canciones as cancionesFijas, musica, pareja, type Cancion } from "@/datos/contenido";
 import { buscarLetraEnLinea, useCancionesCompartidas } from "@/lib/useCancionesCompartidas";
+import { animarEnJs, resorte } from "@/lib/aparecer";
 import LetraCancion from "./LetraCancion";
+
+// El mismo resorte con que se abría el panel (rigidez 260, amortiguación 26).
+const PANEL = resorte(260, 26);
 
 // Reproductor flotante con la lista de canciones de Spotify.
 // Usa el reproductor oficial de Spotify (iFrame API): no se descarga nada.
@@ -336,17 +340,18 @@ export default function Reproductor() {
       </button>
 
       {/* panel (siempre montado para que la música siga sonando) */}
-      <motion.div
+      <div
         ref={panel}
-        initial={false}
-        // Cerrado queda "invisible": la música sigue, pero el navegador no lo pinta
-        // encima de la página al desplazarse (evita parpadeos en celular).
-        animate={
-          abierto
-            ? { opacity: 1, y: 0, pointerEvents: "auto", visibility: "visible" }
-            : { opacity: 0, y: 30, pointerEvents: "none", transitionEnd: { visibility: "hidden" } }
-        }
-        transition={{ type: "spring", stiffness: 260, damping: 26 }}
+        // Transición CSS con el mismo resorte de antes (en iPhone, framer dejaba
+        // un cuadro medio transparente al terminar). Cerrado queda "invisible":
+        // la música sigue, pero el navegador no lo pinta al desplazarse.
+        style={{
+          opacity: abierto ? 1 : 0,
+          transform: abierto ? "translateY(0px)" : "translateY(30px)",
+          pointerEvents: abierto ? "auto" : "none",
+          visibility: abierto ? "visible" : "hidden",
+          transition: `opacity ${PANEL.duracion}s ${PANEL.curva}, transform ${PANEL.duracion}s ${PANEL.curva}, visibility 0s linear ${abierto ? 0 : PANEL.duracion}s`,
+        }}
         className="fixed right-3 bottom-18 z-40 flex max-h-[calc(100svh-7rem)] w-[calc(100vw-1.5rem)] max-w-sm sm:right-4 sm:bottom-20 flex-col overflow-hidden rounded-3xl bg-[#2a1a22] text-white shadow-2xl ring-1 ring-white/10"
         aria-hidden={!abierto}
       >
@@ -516,6 +521,7 @@ export default function Reproductor() {
               animate={{ height: "auto", opacity: 1 }}
               exit={{ height: 0, opacity: 0 }}
               transition={{ duration: 0.25, ease: "easeOut" }}
+              onUpdate={animarEnJs}
               className="space-y-2 overflow-hidden border-t border-white/10 bg-black/20 px-4 pt-3 pb-4"
             >
               <div className="flex items-center justify-between">
@@ -556,7 +562,7 @@ export default function Reproductor() {
               <button className="w-full rounded-lg bg-[#ffd6a8] py-2 text-sm font-bold text-vino transition hover:brightness-95">Agregar</button>
               <AnimatePresence>
                 {(error || aviso) && (
-                  <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="text-xs text-white/80">
+                  <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onUpdate={animarEnJs} className="text-xs text-white/80">
                     {error ?? aviso}
                   </motion.p>
                 )}
@@ -574,6 +580,7 @@ export default function Reproductor() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
+              onUpdate={animarEnJs}
               className="flex items-center gap-3 border-t border-white/10 px-4 py-3"
             >
               {(error || aviso) && <p className="min-w-0 flex-1 text-xs text-white/80">{error ?? aviso}</p>}
@@ -607,7 +614,7 @@ export default function Reproductor() {
             />
           )}
         </AnimatePresence>
-      </motion.div>
+      </div>
     </>
   );
 }

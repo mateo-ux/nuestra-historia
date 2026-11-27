@@ -1,8 +1,11 @@
 "use client";
 
-import { motion } from "framer-motion";
 import Image from "next/image";
 import type { Foto } from "@/datos/contenido";
+import { estiloAparecer, resorte, useAparecer } from "@/lib/aparecer";
+
+// El mismo resorte que tenía con framer-motion (rigidez 110, amortiguación 16).
+const CAIDA = resorte(110, 16);
 
 // Foto tipo polaroid que "cae" suavemente sobre la mesa al aparecer.
 export default function Polaroid({
@@ -18,14 +21,18 @@ export default function Polaroid({
   sizes?: string;
   retraso?: number;
 }) {
+  const ref = useAparecer<HTMLElement>("-60px");
   return (
-    <motion.figure
-      className={`relative bg-white p-2 pb-2 sm:p-2.5 sm:pb-3 shadow-[0_15px_35px_-10px_rgba(90,40,30,0.35)] hover:z-10 ${className}`}
-      initial={{ opacity: 0, transform: `translateY(30px) rotate(${giro * 2.2}deg) scale(0.94)` }}
-      whileInView={{ opacity: 1, transform: `translateY(0px) rotate(${giro}deg) scale(1)` }}
-      whileHover={{ transform: "translateY(0px) rotate(0deg) scale(1.05)" }}
-      viewport={{ once: true, margin: "-60px" }}
-      transition={{ type: "spring", stiffness: 110, damping: 16, delay: retraso }}
+    <figure
+      ref={ref}
+      className={`aparecer polaroid relative bg-white p-2 pb-2 sm:p-2.5 sm:pb-3 shadow-[0_15px_35px_-10px_rgba(90,40,30,0.35)] hover:z-10 ${className}`}
+      style={estiloAparecer({
+        desde: `translateY(30px) rotate(${giro * 2.2}deg) scale(0.94)`,
+        hasta: `translateY(0px) rotate(${giro}deg) scale(1)`,
+        duracion: CAIDA.duracion,
+        curva: CAIDA.curva,
+        retraso,
+      })}
     >
       <div className="relative aspect-[4/5] w-full overflow-hidden bg-durazno">
         <Image src={foto.src} alt={foto.pie ?? "Foto de nosotros"} fill sizes={sizes} className="object-cover" />
@@ -33,6 +40,6 @@ export default function Polaroid({
       <figcaption className="titulo-mano flex min-h-8 items-center justify-center px-1 pt-1.5 text-center text-base leading-tight text-tinta/80 sm:min-h-9 sm:text-xl">
         {foto.pie}
       </figcaption>
-    </motion.figure>
+    </figure>
   );
 }

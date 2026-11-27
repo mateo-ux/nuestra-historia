@@ -1,6 +1,7 @@
 "use client";
 
 import { AnimatePresence, motion } from "framer-motion";
+import { animarEnJs } from "@/lib/aparecer";
 import { useState } from "react";
 import Corazon from "./Corazon";
 import Estrellas from "./Estrellas";
@@ -163,6 +164,7 @@ export default function EscenaRobots() {
           </motion.g>
           {/* sombra de ella */}
           <motion.ellipse
+            onUpdate={animarEnJs}
             cy={330}
             rx={36}
             ry={7}
@@ -177,6 +179,7 @@ export default function EscenaRobots() {
           <AnimatePresence>
             {fase === 2 && (
               <motion.g
+                onUpdate={animarEnJs}
                 key="chispa"
                 initial={{ scale: 0, opacity: 0 }}
                 animate={{ scale: [0, 1.4, 1], opacity: 1 }}
@@ -198,6 +201,7 @@ export default function EscenaRobots() {
           {fase === 2 &&
             [0, 1, 2, 3, 4, 5].map((i) => (
               <motion.span
+                onUpdate={animarEnJs}
                 key={i}
                 className="absolute text-[#ff8fb1]"
                 style={{ left: `${50 + (i - 2.5) * 4}%`, top: "38%" }}
@@ -221,6 +225,7 @@ export default function EscenaRobots() {
         <AnimatePresence>
           {fase === 2 && (
             <motion.p
+              onUpdate={animarEnJs}
               className="texto-libro mx-auto mt-6 max-w-xl text-2xl text-white drop-shadow-[0_2px_6px_rgba(60,20,30,0.6)]"
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}

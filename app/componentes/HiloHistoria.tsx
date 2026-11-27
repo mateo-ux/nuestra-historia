@@ -2,6 +2,8 @@
 
 import { motion, useScroll, useSpring } from "framer-motion";
 import { useRef, type ReactNode } from "react";
+import { CURVA_SUAVE } from "@/lib/aparecer";
+import Aparecer from "./Aparecer";
 
 // El hilo punteado de la historia se va "dibujando" a medida que bajas.
 export function HiloHistoria({ children }: { children: ReactNode }) {
@@ -20,32 +22,58 @@ export function HiloHistoria({ children }: { children: ReactNode }) {
   );
 }
 
+// Curva para el latido: 0 → 1.2 → 1, cada mitad con "easeOut" (como estaba).
+const LATIDO = (() => {
+  // easeOut = cubic-bezier(0, 0, 0.58, 1)
+  const salida = (t: number) => {
+    let u = t;
+    for (let i = 0; i < 8; i++) {
+      const x = 3 * (1 - u) * u * u * 0.58 + u * u * u;
+      const dx = 6 * (1 - u) * u * 0.58 - 3 * u * u * 0.58 + 3 * u * u + 1e-6;
+      u -= (x - t) / dx;
+      u = Math.min(1, Math.max(0, u));
+    }
+    return 3 * (1 - u) * u * u + u * u * u;
+  };
+  const puntos: string[] = [];
+  for (let i = 0; i <= 40; i++) {
+    const t = i / 40;
+    const v = t < 0.5 ? 1.2 * salida(t / 0.5) : 1.2 - 0.2 * salida((t - 0.5) / 0.5);
+    puntos.push(v.toFixed(4));
+  }
+  return `linear(${puntos.join(", ")})`;
+})();
+
 // El corazoncito de cada capítulo aparece con un pequeño latido.
 export function PuntoHilo() {
   return (
-    <motion.div
+    <Aparecer
       className="absolute top-2 left-4 z-10 grid h-9 w-9 -translate-x-1/2 place-items-center rounded-full bg-atardecer text-white shadow-md md:left-1/2"
-      initial={{ transform: "scale(0)" }}
-      whileInView={{ transform: ["scale(0)", "scale(1.2)", "scale(1)"] }}
-      viewport={{ once: true, margin: "-120px" }}
-      transition={{ duration: 0.6, ease: "easeOut" }}
+      margen="-120px"
+      observarPadre
+      desde="scale(0)"
+      hasta="scale(1)"
+      opacidadDesde={1}
+      duracion={0.6}
+      curva={LATIDO}
     >
       ♥
-    </motion.div>
+    </Aparecer>
   );
 }
 
 // El texto de cada capítulo entra desde su lado.
 export function EntradaLateral({ children, desde, className }: { children: ReactNode; desde: 1 | -1; className?: string }) {
   return (
-    <motion.div
+    <Aparecer
       className={className}
-      initial={{ opacity: 0, transform: `translateX(${desde * 40}px)` }}
-      whileInView={{ opacity: 1, transform: "translateX(0px)" }}
-      viewport={{ once: true, margin: "-80px" }}
-      transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
+      margen="-80px"
+      desde={`translateX(${desde * 40}px)`}
+      hasta="translateX(0px)"
+      duracion={0.8}
+      curva={CURVA_SUAVE}
     >
       {children}
-    </motion.div>
+    </Aparecer>
   );
 }
