@@ -125,6 +125,27 @@ body {
   0%, 100% { transform: scale(1); }
   50% { transform: scale(1.08); }
 }
+/* Botón de la plantita (escena de los robots): halo, brillo y plantita que se mece. */
+@keyframes halo-boton {
+  0% { transform: scale(1); opacity: 0.55; }
+  100% { transform: scale(1.25, 1.6); opacity: 0; }
+}
+.halo-boton { animation: halo-boton 2.4s cubic-bezier(0.22, 1, 0.36, 1) infinite; }
+.halo-boton-2 { animation-delay: 1.2s; }
+@keyframes brillo-boton {
+  0%, 55% { transform: translateX(0) skewX(-20deg); }
+  100% { transform: translateX(560%) skewX(-20deg); }
+}
+.brillo-boton {
+  background: linear-gradient(90deg, transparent, rgba(255, 214, 168, 0.75), transparent);
+  animation: brillo-boton 3.2s ease-in-out infinite;
+}
+@keyframes mecer-plantita {
+  0%, 100% { transform: rotate(-10deg); }
+  50% { transform: rotate(12deg) translateY(-1px); }
+}
+.mecer-plantita { transform-origin: 50% 90%; animation: mecer-plantita 1.6s ease-in-out infinite; }
+
 @keyframes pulso-ayuda {
   0%, 100% { opacity: 0.4; }
   50% { opacity: 1; }

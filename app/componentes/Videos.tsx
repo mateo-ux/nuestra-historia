@@ -45,7 +45,10 @@ function Escena({
   const alAvanzar = () => {
     const el = ref.current;
     if (!el) return;
-    if (el.currentTime >= video.fin || el.currentTime < video.inicio - 0.5) el.currentTime = video.inicio;
+    if (el.currentTime >= video.fin || el.currentTime < video.inicio - 0.5) {
+      el.currentTime = video.inicio;
+      if (activo && el.paused) el.play().catch(() => {});
+    }
     setProgreso(Math.min(1, Math.max(0, (el.currentTime - video.inicio) / (video.fin - video.inicio))));
   };
 
@@ -67,7 +70,9 @@ function Escena({
       >
         <video
           ref={ref}
-          src={`${video.archivo}#t=${video.inicio},${video.fin}`}
+          // solo el inicio en la URL: con "#t=inicio,fin" el navegador se
+          // pausa al llegar a fin y el video no volvía a empezar
+          src={`${video.archivo}#t=${video.inicio}`}
           poster={video.portada}
           muted
           playsInline

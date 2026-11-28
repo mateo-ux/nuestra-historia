@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { MAXIMO_SEGUNDOS } from "@/lib/useVoces";
 
 // Un renglón que se graba desde el celular: grabar, escuchar y borrar para
@@ -16,6 +16,7 @@ export default function RenglonVoz({
   guardando,
   sonando,
   resaltado = false,
+  compartido = false,
   alGrabar,
   alDetener,
   alEscuchar,
@@ -31,20 +32,45 @@ export default function RenglonVoz({
   guardando: boolean;
   sonando: boolean;
   resaltado?: boolean;
+  compartido?: boolean;
   alGrabar: () => void;
   alDetener: () => void;
   alEscuchar: () => void;
   alBorrar: () => void;
 }) {
-  // Borrar pide un segundo toque para no perder una grabación sin querer.
+  // Antes de borrar se pide confirmar (igual que al eliminar una canción).
   const [confirmar, setConfirmar] = useState(false);
-  useEffect(() => {
-    if (!confirmar) return;
-    const t = setTimeout(() => setConfirmar(false), 3000);
-    return () => clearTimeout(t);
-  }, [confirmar]);
 
   const boton = "inline-flex h-9 shrink-0 items-center justify-center gap-1.5 rounded-full px-3 text-sm font-bold shadow-sm transition active:scale-95 disabled:opacity-50";
+
+  if (confirmar) {
+    return (
+      <div className="flex flex-wrap items-center gap-2 rounded-2xl bg-[#8e3b46] px-3 py-2.5 text-left text-white ring-1 ring-vino/30">
+        <p className="min-w-0 flex-1 basis-40 text-sm">
+          ¿Eliminar la grabación <span className="font-semibold">“{etiqueta}”</span>?{compartido && " Se borra para los dos."}
+        </p>
+        <div className="ml-auto flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setConfirmar(false)}
+            className="shrink-0 rounded-full bg-white/15 px-3 py-1.5 text-xs font-bold transition hover:bg-white/25"
+          >
+            No
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setConfirmar(false);
+              alBorrar();
+            }}
+            className="shrink-0 rounded-full bg-[#ffd6a8] px-3 py-1.5 text-xs font-bold text-vino transition hover:brightness-95"
+          >
+            Sí, eliminar
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div
@@ -75,11 +101,11 @@ export default function RenglonVoz({
             </button>
             <button
               type="button"
-              onClick={() => (confirmar ? (setConfirmar(false), alBorrar()) : setConfirmar(true))}
-              className={`${boton} ${confirmar ? "bg-[#d6455d] text-white" : "bg-white text-vino ring-1 ring-vino/15"}`}
-              aria-label={confirmar ? "Confirmar: borrar la grabación" : "Borrar para grabar otra vez"}
+              onClick={() => setConfirmar(true)}
+              className={`${boton} bg-white text-vino ring-1 ring-vino/15`}
+              aria-label="Borrar para grabar otra vez"
             >
-              {confirmar ? "¿Borrar?" : "🗑"}
+              🗑
             </button>
           </>
         ) : (

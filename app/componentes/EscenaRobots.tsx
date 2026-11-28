@@ -216,12 +216,35 @@ export default function EscenaRobots() {
       </div>
 
       <div className="mt-6 text-center">
-        <button
-          onClick={regalar}
-          className="rounded-full bg-white px-7 py-3 font-bold text-vino shadow-lg transition hover:scale-105 active:scale-95"
-        >
-          {fase === 0 ? "🌱 Dale la plantita" : fase === 1 ? "…" : "↺ Otra vez"}
-        </button>
+        {/* Mientras espera: un halo que late, un brillo que pasa y la plantita
+            que se mece, para que se note que se puede tocar (todo con CSS). */}
+        <span className="relative inline-block">
+          {fase === 0 && (
+            <>
+              <span aria-hidden className="halo-boton pointer-events-none absolute inset-0 rounded-full bg-[#ffe9a8]" />
+              <span aria-hidden className="halo-boton halo-boton-2 pointer-events-none absolute inset-0 rounded-full bg-[#ffe9a8]" />
+            </>
+          )}
+          <button
+            onClick={regalar}
+            className={`relative overflow-hidden rounded-full bg-white px-7 py-3 font-bold text-vino transition hover:scale-105 active:scale-95 ${
+              fase === 0 ? "shadow-[0_0_24px_6px_rgba(255,226,150,0.55)]" : "shadow-lg"
+            }`}
+          >
+            {fase === 0 && <span aria-hidden className="brillo-boton pointer-events-none absolute inset-y-0 -left-1/2 w-1/3" />}
+            <span className="relative">
+              {fase === 0 ? (
+                <>
+                  <span className="mecer-plantita inline-block">🌱</span> Dale la plantita
+                </>
+              ) : fase === 1 ? (
+                "…"
+              ) : (
+                "↺ Otra vez"
+              )}
+            </span>
+          </button>
+        </span>
         <AnimatePresence>
           {fase === 2 && (
             <motion.p

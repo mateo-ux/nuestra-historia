@@ -81,7 +81,7 @@ export default function Final() {
           </div>
           <p className="titulo-mano mt-6 text-5xl">te amo</p>
           <p className="mt-2 text-sm text-white/90">
-            Hecho con todo mi amor por {pareja.el}, para {pareja.ella}.
+            Hecho con todo mi amor por Mateito, para mi Morenita linda.
           </p>
         </div>
       </div>

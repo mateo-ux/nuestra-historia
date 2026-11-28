@@ -224,13 +224,12 @@ const mensajeLento = "Te... a... mo...";
 
 // El guion de la zanahoria grabadora: un renglón para cada uno.
 const guion = [
-  { clave: "zanahoria-1", icono: "🦊", quien: pareja.el, texto: "«Te amo, conejita. Y no, no es ninguna de mis estafas.»" },
-  { clave: "zanahoria-2", icono: "🐰", quien: pareja.ella, texto: "«Lo sé, zorro desgraciado. Yo también te amo.»" },
+  { clave: "zanahoria-1", icono: "🦊", quien: pareja.el, texto: "«Te amo, conejita. Y te amare por siempre»" },
+  { clave: "zanahoria-2", icono: "🐰", quien: pareja.ella, texto: "«Lo sé, zorro desgraciado. Yo te amo mucho mas.»" },
 ] as const;
 
 const vocesFlash = [
   { clave: "flash-lento", icono: "🦥", etiqueta: "Mateo Flash", texto: "«Te… a… mo…»" },
-  { clave: "flash-normal", icono: "💛", etiqueta: "Mateo", texto: "«Te amo.»" },
 ] as const;
 
 const esperar = (ms: number) => new Promise((r) => setTimeout(r, ms));
@@ -304,7 +303,11 @@ export default function EscenaZootopia() {
       if (voz) await tocar(guion[i].clave, voz.url);
       else await esperar(2200);
     }
-    if (turno.current === mio) setLinea(null);
+    // al terminar las grabaciones, la zanahoria se detiene sola
+    if (turno.current === mio) {
+      setLinea(null);
+      setGrabacion(false);
+    }
   };
 
   const controlesVoz = (clave: ClaveVoz) => ({
@@ -427,6 +430,7 @@ export default function EscenaZootopia() {
                 key={g.clave}
                 icono={g.icono}
                 etiqueta={`Lo dice ${g.quien}`}
+                compartido={compartido}
                 texto={g.texto}
                 resaltado={linea === i}
                 {...controlesVoz(g.clave)}
@@ -490,7 +494,7 @@ export default function EscenaZootopia() {
           <div className="mt-5 w-full max-w-md space-y-2">
             <p className="text-[11px] font-bold tracking-[0.25em] text-[#8a6f53] uppercase">🎙️ Las voces de Flash</p>
             {vocesFlash.map((v) => (
-              <RenglonVoz key={v.clave} icono={v.icono} etiqueta={v.etiqueta} texto={v.texto} {...controlesVoz(v.clave)} />
+              <RenglonVoz key={v.clave} icono={v.icono} etiqueta={v.etiqueta} texto={v.texto} compartido={compartido} {...controlesVoz(v.clave)} />
             ))}
           </div>
         </Revelar>
